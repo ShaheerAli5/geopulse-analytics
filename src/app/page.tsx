@@ -20,6 +20,7 @@ import { getGoldenCase } from "@/lib/golden_case_data";
 export default function WorkbenchPage() {
   const [activeCaseId, setActiveCaseId] = useState<string | null>("pk_divergence");
   const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false);
+  const [wizardStep, setWizardStep] = useState<1 | 2>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -101,6 +102,9 @@ export default function WorkbenchPage() {
     const wizardParam = urlParams.get("wizard");
     if (wizardParam === "true" || wizardParam === "open") {
       setIsWizardOpen(true);
+      if (urlParams.get("step") === "2") {
+        setWizardStep(2);
+      }
     }
 
     const caseParam = urlParams.get("case");
@@ -181,24 +185,34 @@ export default function WorkbenchPage() {
   }, [activeCaseId, data, selectedVariable, aggregationMode, regionA, regionB, startYear, endYear]);
 
   // Execute live analysis against /api/analyze
-  const handleRunInvestigation = useCallback(async () => {
+  const handleRunInvestigation = useCallback(async (customOverrides?: {
+    variable?: string;
+    regionA?: RegionInput;
+    regionB?: RegionInput;
+    aggregation?: "annual" | "monsoon_jjas" | "winter_djf";
+  }) => {
     setIsLoading(true);
     setErrorMessage(null);
     setActiveCaseId(null);
 
+    const v = customOverrides?.variable || selectedVariable;
+    const rA = customOverrides?.regionA || regionA;
+    const rB = customOverrides?.regionB !== undefined ? customOverrides.regionB : regionB;
+    const agg = customOverrides?.aggregation || aggregationMode;
+
     const payload = {
-      variable_id: selectedVariable,
-      latA: regionA.lat,
-      lonA: regionA.lon,
-      nameA: regionA.name,
-      ...(regionB
+      variable_id: v,
+      latA: rA.lat,
+      lonA: rA.lon,
+      nameA: rA.name,
+      ...(rB
         ? {
-            latB: regionB.lat,
-            lonB: regionB.lon,
-            nameB: regionB.name,
+            latB: rB.lat,
+            lonB: rB.lon,
+            nameB: rB.name,
           }
         : {}),
-      aggregation_mode: aggregationMode,
+      aggregation_mode: agg,
       start_year: startYear,
       end_year: endYear,
     };
@@ -238,12 +252,38 @@ export default function WorkbenchPage() {
   // Apply configuration recommended by Guided Question Wizard
   const handleApplyTheme = useCallback((theme: WizardTheme) => {
     setSelectedVariable(theme.recommendedVariable);
-    setRegionA({ id: "A", ...theme.suggestedA });
-    setRegionB({ id: "B", ...theme.suggestedB });
+    const newRegA: RegionInput = { id: "A", ...theme.suggestedA };
+    const newRegB: RegionInput = { id: "B", ...theme.suggestedB };
+    setRegionA(newRegA);
+    setRegionB(newRegB);
     setAggregationMode(theme.aggregation);
     setResearchQuestion(theme.question);
+
+    // If theme maps to one of the 4 pre-cached golden cases, load it instantly (<1ms)
+    const themeToCaseMap: Record<string, string> = {
+      drought: "pk_divergence",
+      heatwave: "pk_heatwave",
+      rainfall_monsoon: "amazon_drying",
+      lake_desiccation: "aral_sea",
+    };
+    const matchedCaseId = themeToCaseMap[theme.id];
+    if (matchedCaseId) {
+      const matchedCase = GOLDEN_CASE_FILES.find((c) => c.id === matchedCaseId);
+      if (matchedCase) {
+        loadGoldenDemo(matchedCase);
+        return;
+      }
+    }
+
+    // For other themes (e.g. humidity_danger, solar_dimming), trigger live query immediately
     setActiveCaseId(null);
-  }, []);
+    handleRunInvestigation({
+      variable: theme.recommendedVariable,
+      regionA: newRegA,
+      regionB: newRegB,
+      aggregation: theme.aggregation,
+    });
+  }, [loadGoldenDemo, handleRunInvestigation]);
 
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 overflow-hidden font-sans">
@@ -356,6 +396,7 @@ export default function WorkbenchPage() {
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onApplyTheme={handleApplyTheme}
+        initialStep={wizardStep}
       />
     </div>
   );

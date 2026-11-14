@@ -3024,12 +3024,21 @@ export const GOLDEN_CASES: Record<string, InvestigationResponse> = {
 }
 };
 
+// Aliases for underscore-format IDs used across URLs and components
+GOLDEN_CASES['pk_divergence'] = GOLDEN_CASES['pk-divergence'];
+GOLDEN_CASES['pk_heatwave'] = GOLDEN_CASES['pk-heatwave'];
+GOLDEN_CASES['aral_sea'] = GOLDEN_CASES['aral-sea'];
+GOLDEN_CASES['amazon_drying'] = GOLDEN_CASES['amazon-drying'];
+
 export function getGoldenCase(id: string): InvestigationResponse | undefined {
-  return GOLDEN_CASES[id];
+  if (!id) return undefined;
+  const normHyphen = id.replace(/_/g, "-");
+  const normUnderscore = id.replace(/-/g, "_");
+  return GOLDEN_CASES[id] || GOLDEN_CASES[normHyphen] || GOLDEN_CASES[normUnderscore];
 }
 
 export async function loadGoldenCase(id: string): Promise<InvestigationResponse> {
-  const cached = GOLDEN_CASES[id];
+  const cached = getGoldenCase(id);
   if (cached) return cached;
   throw new Error('Unknown golden case: ' + id);
 }

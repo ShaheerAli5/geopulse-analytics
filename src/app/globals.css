@@ -46,3 +46,32 @@ body {
 .maplibregl-ctrl-icon {
   filter: invert(1) brightness(1.2);
 }
+
+/* Print-to-PDF styles for reproducible case report output */
+@media print {
+  body {
+    background: #0f172a !important;
+    color: #f8fafc !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  header[data-testid="case-file-bar"] button {
+    display: none !important;
+  }
+
+  main {
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  aside, div {
+    overflow: visible !important;
+    max-height: none !important;
+  }
+
+  button {
+    display: none !important;
+  }
+}

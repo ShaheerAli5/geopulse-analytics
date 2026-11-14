@@ -100,22 +100,24 @@ export interface QuestionWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
   onApplyTheme: (theme: WizardTheme) => void;
+  initialStep?: 1 | 2;
 }
 
 export const QuestionWizardModal: React.FC<QuestionWizardModalProps> = ({
   isOpen,
   onClose,
   onApplyTheme,
+  initialStep = 1,
 }) => {
   const [selectedThemeId, setSelectedThemeId] = useState<string>(WIZARD_THEMES[0].id);
-  const [step, setStep] = useState<1 | 2>(1);
+  const [step, setStep] = useState<1 | 2>(initialStep);
 
   // Reset modal state on open
   useEffect(() => {
     if (isOpen) {
-      setStep(1);
+      setStep(initialStep);
     }
-  }, [isOpen]);
+  }, [isOpen, initialStep]);
 
   // Handle escape key
   useEffect(() => {

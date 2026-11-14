@@ -17,15 +17,29 @@ function formatCoordStr(lat: number, lon: number): string {
 }
 
 export function formatRegionVerdict(r: RegionAnalysis, units: string): string {
+  const coordStr = formatCoordStr(r.region.lat, r.region.lon);
+
+  if (r.stats.badge === "INSUFFICIENT_DATA") {
+    const n = r.stats.n_years;
+    return `${r.region.name} (${coordStr}) has insufficient observations (${n} valid year${
+      n === 1 ? "" : "s"
+    }; minimum 10 required) to establish a statistically reliable trend trajectory.`;
+  }
+
   const slope = r.stats.ols_slope_per_decade;
-  const dir = Math.abs(slope) < 1e-6 ? "stable / flat" : slope > 0 ? "increasing" : "decreasing";
+  if (r.stats.badge === "NO_MONOTONIC_TREND" && Math.abs(slope) < 1e-6) {
+    return `${r.region.name} (${coordStr}) shows a stable, flat trajectory with no monotonic trend (OLS slope: 0.0000 ${units}/decade; Sen's robust slope: 0.0000 ${units}/decade; Mann–Kendall p = ${r.stats.mk_p_value.toFixed(
+      3
+    )}, τ = ${r.stats.mk_tau.toFixed(2)}).`;
+  }
+
+  const dir = slope >= 0 ? "increasing" : "decreasing";
   const dirArticle = dir === "increasing" ? "an" : "a";
   const sig =
     r.stats.mk_p_value < 0.05
       ? `statistically significant (Mann–Kendall p = ${r.stats.mk_p_value.toFixed(4)}, τ = ${r.stats.mk_tau.toFixed(2)})`
       : `not statistically significant at α = 0.05 (Mann–Kendall p = ${r.stats.mk_p_value.toFixed(3)}, τ = ${r.stats.mk_tau.toFixed(2)})`;
 
-  const coordStr = formatCoordStr(r.region.lat, r.region.lon);
   return `${r.region.name} (${coordStr}) shows ${dirArticle} ${dir} linear rate of ${
     slope >= 0 ? "+" : ""
   }${slope.toFixed(4)} ${units}/decade (Sen's robust slope: ${

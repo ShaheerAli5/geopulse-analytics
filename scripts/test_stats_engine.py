@@ -93,7 +93,15 @@ class TestStatsEngine(unittest.TestCase):
         stats = res["stats"]
 
         self.assertEqual(stats["ols_slope_per_decade"], 0.0)
-        self.assertIn(stats["badge"], ["NO_MONOTONIC_TREND", "INCREASING_NOT_SIGNIFICANT", "DECREASING_NOT_SIGNIFICANT"])
+        self.assertEqual(stats["badge"], "NO_MONOTONIC_TREND")
+        self.assertEqual(stats["mk_tau"], 0.0)
+        self.assertEqual(stats["mk_p_value"], 1.0)
+        self.assertEqual(stats["ols_r_squared"], 0.0)
+
+        # Must be 100% strict JSON compliant (RFC 8259, absolutely no NaN or Inf)
+        json_str = json.dumps(res, allow_nan=False)
+        self.assertNotIn("NaN", json_str)
+        self.assertNotIn("Infinity", json_str)
 
 
 class TestGoldenDemos(unittest.TestCase):
@@ -190,6 +198,87 @@ class TestAnalyzeEndpoint(unittest.TestCase):
                 "latA": 0,
                 "lonA": 0,
             })
+
+    def test_dual_region_investigation(self):
+        res = execute_investigation({
+            "variable_id": "T2M",
+            "latA": 28.28,
+            "lonA": 68.44,
+            "nameA": "Jacobabad",
+            "latB": 24.86,
+            "lonB": 67.01,
+            "nameB": "Karachi",
+            "start_year": 2015,
+            "end_year": 2024,
+            "aggregation_mode": "annual",
+        })
+        self.assertEqual(res["variable_id"], "T2M")
+        self.assertIn("region_a", res)
+        self.assertIn("region_b", res)
+        self.assertIsInstance(res["divergence_detected"], bool)
+        self.assertEqual(res["aggregation_mode"], "annual")
+
+    def test_seasonal_aggregation_modes(self):
+        for mode in ["monsoon_jjas", "winter_djf"]:
+            res = execute_investigation({
+                "variable_id": "PRECTOTCORR",
+                "latA": 35.30,
+                "lonA": 75.60,
+                "nameA": "Upper Indus",
+                "start_year": 2018,
+                "end_year": 2023,
+                "aggregation_mode": mode,
+            })
+            self.assertEqual(res["aggregation_mode"], mode)
+            self.assertGreaterEqual(len(res["region_a"]["series"]), 5)
+
+    def test_lowercase_variable_id(self):
+        res = execute_investigation({
+            "variable_id": "t2m",
+            "latA": 35.30,
+            "lonA": 75.60,
+            "start_year": 2020,
+            "end_year": 2022,
+        })
+        self.assertEqual(res["variable_id"], "T2M")
+
+    def test_inverted_year_range_auto_orders(self):
+        res = execute_investigation({
+            "variable_id": "T2M",
+            "latA": 35.30,
+            "lonA": 75.60,
+            "start_year": 2023,
+            "end_year": 2020,
+        })
+        self.assertEqual(res["start_year"], 2020)
+        self.assertEqual(res["end_year"], 2023)
+
+    def test_empty_region_b_treated_as_single_region(self):
+        res = execute_investigation({
+            "variable_id": "T2M",
+            "latA": 35.30,
+            "lonA": 75.60,
+            "latB": "",
+            "lonB": "   ",
+            "start_year": 2020,
+            "end_year": 2022,
+        })
+        self.assertIn("region_a", res)
+        self.assertNotIn("region_b", res)
+        self.assertFalse(res["divergence_detected"])
+
+    def test_out_of_bounds_coordinates_clamped(self):
+        res = execute_investigation({
+            "variable_id": "T2M",
+            "latA": 95.0,
+            "lonA": 200.0,
+            "start_year": 2020,
+            "end_year": 2022,
+        })
+        self.assertLessEqual(res["region_a"]["region"]["lat"], 85.05)
+        self.assertGreaterEqual(res["region_a"]["region"]["lat"], -85.05)
+        self.assertLessEqual(res["region_a"]["region"]["lon"], 180.0)
+        self.assertGreaterEqual(res["region_a"]["region"]["lon"], -180.0)
 
 
 

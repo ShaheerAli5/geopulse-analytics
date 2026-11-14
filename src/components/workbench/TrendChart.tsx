@@ -138,8 +138,8 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data }) => {
       </div>
 
       {/* Chart Canvas */}
-      <div className="flex-1 w-full min-h-[220px]">
-        <ResponsiveContainer width="100%" height="100%" minHeight={240}>
+      <div className="flex-1 w-full min-h-[220px] relative">
+        <ResponsiveContainer width="100%" height="100%" minHeight={220}>
           <ComposedChart data={mergedSeries} margin={{ top: 10, right: 15, left: -5, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
             <XAxis
@@ -245,6 +245,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data }) => {
               dot={{ r: 2.5, fill: "#06B6D4" }}
               activeDot={{ r: 5, stroke: "#fff", strokeWidth: 1 }}
               connectNulls
+              isAnimationActive={false}
             />
             <Line
               type="linear"
@@ -255,6 +256,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data }) => {
               strokeDasharray="6 4"
               dot={false}
               connectNulls
+              isAnimationActive={false}
             />
 
             {/* Region B Lines */}
@@ -269,6 +271,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data }) => {
                   dot={{ r: 2.5, fill: "#F97316" }}
                   activeDot={{ r: 5, stroke: "#fff", strokeWidth: 1 }}
                   connectNulls
+                  isAnimationActive={false}
                 />
                 <Line
                   type="linear"
@@ -279,6 +282,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data }) => {
                   strokeDasharray="6 4"
                   dot={false}
                   connectNulls
+                  isAnimationActive={false}
                 />
               </>
             )}

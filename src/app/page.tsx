@@ -15,6 +15,7 @@ import {
   WizardTheme,
   GOLDEN_CASE_FILES,
 } from "@/components/detective";
+import { getGoldenCase } from "@/lib/golden_case_data";
 
 export default function WorkbenchPage() {
   const [activeCaseId, setActiveCaseId] = useState<string | null>("pk_divergence");
@@ -43,14 +44,35 @@ export default function WorkbenchPage() {
     "How do hydrological & temperature trends diverge across regional ecosystems?"
   );
 
-  // Loaded investigation data
-  const [data, setData] = useState<InvestigationResponse | null>(null);
+  // Loaded investigation data (preloaded instantly with zero-latency in-memory cache)
+  const [data, setData] = useState<InvestigationResponse | null>(() => {
+    return (getGoldenCase("pk-divergence") as unknown as InvestigationResponse) || null;
+  });
 
   // Helper to load a pre-cached golden case file (<50ms for instant judge inspection)
   const loadGoldenDemo = useCallback(async (caseFile: CaseFileOption) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
+      // 1. Try instant in-memory cache first (<1ms)
+      const cached =
+        getGoldenCase(caseFile.id) ||
+        getGoldenCase(caseFile.id.replace(/_/g, "-"));
+      if (cached) {
+        const c = cached as unknown as InvestigationResponse;
+        setData(c);
+        setActiveCaseId(caseFile.id);
+        setSelectedVariable(c.variable_id);
+        setRegionA(c.region_a.region);
+        setRegionB(c.region_b ? c.region_b.region : undefined);
+        setAggregationMode(c.aggregation_mode);
+        setStartYear(c.start_year);
+        setEndYear(c.end_year);
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Fallback to public JSON fetch
       const res = await fetch(`/data/golden_demos/${caseFile.filename}`);
       if (!res.ok) {
         throw new Error(`Failed to load golden demo: ${res.statusText}`);
@@ -76,6 +98,11 @@ export default function WorkbenchPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const urlParams = new URLSearchParams(window.location.search);
+    const wizardParam = urlParams.get("wizard");
+    if (wizardParam === "true" || wizardParam === "open") {
+      setIsWizardOpen(true);
+    }
+
     const caseParam = urlParams.get("case");
 
     if (caseParam) {

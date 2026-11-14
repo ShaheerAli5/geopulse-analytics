@@ -348,6 +348,13 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(payload_bytes)
 
     def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path in ["/health", "/api/health"]:
+            health_payload = {"status": "ok", "service": "GeoPulse-Analytics-API"}
+            self._set_headers(200)
+            self.wfile.write(json.dumps(health_payload).encode("utf-8"))
+            return
+
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length) if content_length > 0 else b"{}"
 

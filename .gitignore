@@ -2,7 +2,7 @@
 # GeoPulse Analytics - Git Ignore Configuration
 # ==========================================
 
-# --- Project Documentation & Local Agent Files (Excluded from Git) ---
+# --- Project Documentation (Excluded from Git as requested) ---
 docs/
 .agent/
 .agents/

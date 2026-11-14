@@ -5,9 +5,27 @@ Theil-Sen robust slope, 95% confidence intervals, lag-1 autocorrelation diagnost
 and the 6-tier ConfidenceBadge.
 """
 
+import math
 from typing import Any, Dict, List
 import numpy as np
 from scipy import stats
+
+
+def _clean_float(val: Any, default: float = 0.0, ndigits: int | None = None) -> float:
+    """Safely converts and sanitizes a float, preventing NaN, Inf, and -0.0 in JSON."""
+    if val is None:
+        return default
+    try:
+        f = float(val)
+        if math.isnan(f) or math.isinf(f):
+            return default
+        if abs(f) < 1e-12:
+            f = 0.0
+        if ndigits is not None:
+            return round(f, ndigits)
+        return f
+    except (ValueError, TypeError):
+        return default
 
 
 def analyze_time_series(records: List[Dict[str, float]], units: str = "") -> Dict[str, Any]:
@@ -27,20 +45,21 @@ def analyze_time_series(records: List[Dict[str, float]], units: str = "") -> Dic
 
     if n < 10:
         enriched_series = []
-        mean_fallback = float(np.mean(values)) if n > 0 else 0.0
+        mean_fallback = _clean_float(np.mean(values)) if n > 0 else 0.0
         for r in records:
+            v = _clean_float(r["value"], ndigits=4)
             enriched_series.append({
                 "year": int(r["year"]),
-                "value": round(float(r["value"]), 4),
-                "ols_fitted": round(float(r["value"]), 4),
-                "sen_fitted": round(float(r["value"]), 4),
-                "anomaly": round(float(r["value"]) - mean_fallback, 4),
+                "value": v,
+                "ols_fitted": v,
+                "sen_fitted": v,
+                "anomaly": _clean_float(v - mean_fallback, ndigits=4),
             })
         return {
             "series": enriched_series,
             "stats": {
                 "n_years": n,
-                "mean_value": round(mean_fallback, 4),
+                "mean_value": _clean_float(mean_fallback, ndigits=4),
                 "std_dev": 0.0,
                 "ols_slope_per_year": 0.0,
                 "ols_slope_per_decade": 0.0,
@@ -60,48 +79,102 @@ def analyze_time_series(records: List[Dict[str, float]], units: str = "") -> Dic
             },
         }
 
-    # 1. Baseline & basic summary stats
-    mean_val = float(np.mean(values))
-    std_val = float(np.std(values, ddof=1)) if n > 1 else 0.0
+    mean_val = _clean_float(np.mean(values))
+    std_val = _clean_float(np.std(values, ddof=1)) if n > 1 else 0.0
 
-    # 2. Ordinary Least Squares (OLS) Linear Regression
+    # Handle perfectly constant or zero-variance series
+    if std_val < 1e-9 or len(set(values)) <= 1:
+        enriched_series = []
+        for r in records:
+            enriched_series.append({
+                "year": int(r["year"]),
+                "value": _clean_float(r["value"], ndigits=4),
+                "ols_fitted": _clean_float(mean_val, ndigits=4),
+                "sen_fitted": _clean_float(mean_val, ndigits=4),
+                "anomaly": 0.0,
+            })
+        return {
+            "series": enriched_series,
+            "stats": {
+                "n_years": n,
+                "mean_value": _clean_float(mean_val, ndigits=4),
+                "std_dev": 0.0,
+                "ols_slope_per_year": 0.0,
+                "ols_slope_per_decade": 0.0,
+                "ols_r_squared": 0.0,
+                "ols_p_value": 1.0,
+                "ols_ci_lower_decade": 0.0,
+                "ols_ci_upper_decade": 0.0,
+                "mk_tau": 0.0,
+                "mk_z_score": 0.0,
+                "mk_p_value": 1.0,
+                "sen_slope_per_decade": 0.0,
+                "sen_ci_lower_decade": 0.0,
+                "sen_ci_upper_decade": 0.0,
+                "lag1_autocorrelation": 0.0,
+                "badge": "NO_MONOTONIC_TREND",
+                "caveats": ["No monotonic trend detected; observations are constant across the timeframe."],
+            },
+        }
+
+    # 1. Ordinary Least Squares (OLS) Linear Regression
     ols = stats.linregress(years, values)
-    slope_yr = float(ols.slope)
-    slope_dec = slope_yr * 10.0
-    r_squared = float(ols.rvalue ** 2)
-    ols_p = float(ols.pvalue)
-    t_crit = float(stats.t.ppf(0.975, df=n - 2))
-    ci_half_dec = t_crit * float(ols.stderr) * 10.0
+    slope_yr = _clean_float(ols.slope)
+    slope_dec = _clean_float(slope_yr * 10.0)
+    r_squared = _clean_float(ols.rvalue ** 2)
+    ols_p = _clean_float(ols.pvalue, default=1.0)
+    stderr = _clean_float(ols.stderr)
+    t_crit = _clean_float(stats.t.ppf(0.975, df=n - 2)) if n > 2 else 0.0
+    ci_half_dec = _clean_float(t_crit * stderr * 10.0)
 
-    # 3. Mann-Kendall Non-Parametric Trend Test
-    tau, mk_p = stats.kendalltau(years, values)
-    # Compute explicit S and Z_MK
+    # 2. Mann-Kendall Non-Parametric Trend Test
+    tau_raw, mk_p_raw = stats.kendalltau(years, values)
+    tau = _clean_float(tau_raw, default=0.0)
+    mk_p = _clean_float(mk_p_raw, default=1.0)
+
+    # Compute explicit S and tie-corrected variance
     s_stat = 0
     for i in range(n - 1):
-        s_stat += int(np.sum(np.sign(values[i + 1 :] - values[i])))
-    var_s = (n * (n - 1) * (2 * n + 5)) / 18.0
-    if s_stat > 0:
-        z_mk = (s_stat - 1) / np.sqrt(var_s)
-    elif s_stat < 0:
-        z_mk = (s_stat + 1) / np.sqrt(var_s)
+        s_stat += int(np.sum(np.sign(values[i + 1:] - values[i])))
+
+    _, tie_counts = np.unique(values, return_counts=True)
+    tie_term = sum(int(t * (t - 1) * (2 * t + 5)) for t in tie_counts if t > 1)
+    var_s = (n * (n - 1) * (2 * n + 5) - tie_term) / 18.0
+
+    if var_s > 0:
+        if s_stat > 0:
+            z_mk = (s_stat - 1) / np.sqrt(var_s)
+        elif s_stat < 0:
+            z_mk = (s_stat + 1) / np.sqrt(var_s)
+        else:
+            z_mk = 0.0
     else:
         z_mk = 0.0
+    z_mk = _clean_float(z_mk)
 
-    # 4. Theil-Sen Robust Slope Estimator
-    sen_slope, sen_intercept, sen_low, sen_high = stats.theilslopes(values, years, 0.95)
+    # 3. Theil-Sen Robust Slope Estimator
+    try:
+        sen_slope, sen_intercept, sen_low, sen_high = stats.theilslopes(values, years, 0.95)
+    except Exception:
+        sen_slope, sen_intercept, sen_low, sen_high = slope_yr, _clean_float(ols.intercept), slope_yr, slope_yr
 
-    # 5. Lag-1 Autocorrelation on OLS Residuals
-    ols_fitted = ols.intercept + slope_yr * years
+    sen_slope = _clean_float(sen_slope)
+    sen_intercept = _clean_float(sen_intercept, default=mean_val)
+    sen_low = _clean_float(sen_low)
+    sen_high = _clean_float(sen_high)
+
+    # 4. Lag-1 Autocorrelation on OLS Residuals
+    ols_intercept = _clean_float(ols.intercept, default=mean_val)
+    ols_fitted = ols_intercept + slope_yr * years
     sen_fitted = sen_intercept + sen_slope * years
     residuals = values - ols_fitted
     if n > 3 and np.std(residuals) > 1e-9:
-        lag1_corr = float(np.corrcoef(residuals[:-1], residuals[1:])[0, 1])
-        if np.isnan(lag1_corr):
-            lag1_corr = 0.0
+        corr_mat = np.corrcoef(residuals[:-1], residuals[1:])
+        lag1_corr = _clean_float(corr_mat[0, 1], default=0.0)
     else:
         lag1_corr = 0.0
 
-    # 6. Classify Confidence Badge & Caveats
+    # 5. Classify Confidence Badge & Caveats
     caveats = []
     if abs(lag1_corr) > 0.30:
         caveats.append(
@@ -111,11 +184,11 @@ def analyze_time_series(records: List[Dict[str, float]], units: str = "") -> Dic
     if n < 20:
         caveats.append(f"Short record length ({n} years); climate normals typically span 30+ years.")
 
-    if mk_p < 0.05:
-        badge = "INCREASING_SIGNIFICANT" if slope_yr > 0 else "DECREASING_SIGNIFICANT"
-    elif abs(tau) < 0.03 and mk_p >= 0.50:
+    if abs(slope_yr) < 1e-9 or (abs(tau) < 0.03 and mk_p >= 0.50):
         badge = "NO_MONOTONIC_TREND"
         caveats.append("No consistent monotonic direction detected over the selected timeframe.")
+    elif mk_p < 0.05:
+        badge = "INCREASING_SIGNIFICANT" if slope_yr > 0 else "DECREASING_SIGNIFICANT"
     else:
         badge = "INCREASING_NOT_SIGNIFICANT" if slope_yr > 0 else "DECREASING_NOT_SIGNIFICANT"
         caveats.append(
@@ -127,32 +200,33 @@ def analyze_time_series(records: List[Dict[str, float]], units: str = "") -> Dic
     for i in range(n):
         enriched_series.append({
             "year": int(years[i]),
-            "value": round(float(values[i]), 4),
-            "ols_fitted": round(float(ols_fitted[i]), 4),
-            "sen_fitted": round(float(sen_fitted[i]), 4),
-            "anomaly": round(float(values[i] - mean_val), 4),
+            "value": _clean_float(values[i], ndigits=4),
+            "ols_fitted": _clean_float(ols_fitted[i], ndigits=4),
+            "sen_fitted": _clean_float(sen_fitted[i], ndigits=4),
+            "anomaly": _clean_float(values[i] - mean_val, ndigits=4),
         })
 
     return {
         "series": enriched_series,
         "stats": {
             "n_years": n,
-            "mean_value": round(mean_val, 4),
-            "std_dev": round(std_val, 4),
-            "ols_slope_per_year": round(slope_yr, 5),
-            "ols_slope_per_decade": round(slope_dec, 4),
-            "ols_r_squared": round(r_squared, 4),
-            "ols_p_value": round(ols_p, 5),
-            "ols_ci_lower_decade": round(slope_dec - ci_half_dec, 4),
-            "ols_ci_upper_decade": round(slope_dec + ci_half_dec, 4),
-            "mk_tau": round(float(tau), 4),
-            "mk_z_score": round(float(z_mk), 3),
-            "mk_p_value": round(float(mk_p), 5),
-            "sen_slope_per_decade": round(float(sen_slope * 10.0), 4),
-            "sen_ci_lower_decade": round(float(sen_low * 10.0), 4),
-            "sen_ci_upper_decade": round(float(sen_high * 10.0), 4),
-            "lag1_autocorrelation": round(lag1_corr, 3),
+            "mean_value": _clean_float(mean_val, ndigits=4),
+            "std_dev": _clean_float(std_val, ndigits=4),
+            "ols_slope_per_year": _clean_float(slope_yr, ndigits=5),
+            "ols_slope_per_decade": _clean_float(slope_dec, ndigits=4),
+            "ols_r_squared": _clean_float(r_squared, ndigits=4),
+            "ols_p_value": _clean_float(ols_p, ndigits=5),
+            "ols_ci_lower_decade": _clean_float(slope_dec - ci_half_dec, ndigits=4),
+            "ols_ci_upper_decade": _clean_float(slope_dec + ci_half_dec, ndigits=4),
+            "mk_tau": _clean_float(tau, ndigits=4),
+            "mk_z_score": _clean_float(z_mk, ndigits=3),
+            "mk_p_value": _clean_float(mk_p, ndigits=5),
+            "sen_slope_per_decade": _clean_float(sen_slope * 10.0, ndigits=4),
+            "sen_ci_lower_decade": _clean_float(sen_low * 10.0, ndigits=4),
+            "sen_ci_upper_decade": _clean_float(sen_high * 10.0, ndigits=4),
+            "lag1_autocorrelation": _clean_float(lag1_corr, ndigits=3),
             "badge": badge,
             "caveats": caveats,
         },
     }
+

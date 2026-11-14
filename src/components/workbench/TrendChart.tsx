@@ -162,7 +162,7 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data }) => {
                 label,
               }: {
                 active?: boolean;
-                payload?: Array<{ payload: any }>;
+                payload?: Array<{ payload?: any }>;
                 label?: string | number;
               }) => {
                 if (!active || !payload || !payload.length) return null;

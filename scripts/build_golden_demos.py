@@ -126,5 +126,38 @@ def build_all_golden_demos():
     print(f"\n[DONE] Successfully generated {success_count}/{len(GOLDEN_CASES)} Golden Demos.")
 
 
+def verify_all_golden_demos() -> bool:
+    print(f"[*] Verifying 4 Golden Case Files in: {GOLDEN_DIR}")
+    all_ok = True
+    for case in GOLDEN_CASES:
+        fpath = os.path.join(GOLDEN_DIR, case["file"])
+        if not os.path.exists(fpath):
+            print(f"  [FAIL] Missing file: {case['file']}")
+            all_ok = False
+            continue
+        try:
+            with open(fpath, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            # Ensure strict JSON compliance without NaN
+            json.dumps(data, allow_nan=False)
+            has_series = len(data.get("region_a", {}).get("series", [])) >= 30
+            has_badge = "badge" in data.get("region_a", {}).get("stats", {})
+            has_ai = "headline" in data.get("ai_interpretation", {})
+            if has_series and has_badge and has_ai:
+                size_kb = os.path.getsize(fpath) / 1024.0
+                print(f"  [OK] {case['file']} ({size_kb:.1f} KB) - Valid Schema & Continuous Records")
+            else:
+                print(f"  [FAIL] {case['file']} - Schema validation incomplete")
+                all_ok = False
+        except Exception as e:
+            print(f"  [FAIL] {case['file']} - Error: {e}")
+            all_ok = False
+    return all_ok
+
+
 if __name__ == "__main__":
-    build_all_golden_demos()
+    if "--verify" in sys.argv:
+        success = verify_all_golden_demos()
+        sys.exit(0 if success else 1)
+    else:
+        build_all_golden_demos()

@@ -301,16 +301,40 @@ This project includes 5 specialized workspace skills in `.agent/skills/` to assi
 
 3. **Install Python backend dependencies:**
    ```bash
+   # Create and activate virtual environment (Windows):
+   python -m venv venv
+   .\venv\Scripts\activate
+
+   # Install requirements:
    pip install -r requirements.txt
    ```
 
 4. **Run the local development server:**
    ```bash
+   # Terminal 1: Run Python Serverless API on PORT 8000
+   .\venv\Scripts\python.exe api/analyze.py
+
+   # Terminal 2: Run Next.js Frontend Workbench on PORT 3000
    npm run dev
    ```
    Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-5. *(Optional)* Run using the Vercel CLI for live serverless function testing:
+5. **Run the Test Suite:**
+   ```bash
+   # Run stats engine and API integration tests:
+   .\venv\Scripts\pytest.exe scripts/test_stats_engine.py -v
+
+   # Verify the 4 Golden Case Files schema and continuous records:
+   .\venv\Scripts\python.exe scripts/build_golden_demos.py --verify
+
+   # Run TypeScript type check:
+   npm run type-check
+
+   # Run Next.js production build:
+   npm run build
+   ```
+
+6. *(Optional)* Run using the Vercel CLI for live serverless function testing:
    ```bash
    vercel dev
    ```

@@ -107,7 +107,7 @@ export const QUICK_PRESETS: PresetOption[] = [
     name: "3: Aral vs. Tien Shan",
     varId: "GWETROOT",
     a: { name: "Aral Sea Basin", lat: 45.0, lon: 59.5 },
-    b: { name: "Tien Shan Range", lat: 42.0, lon: 78.0 },
+    b: { name: "Tien Shan Range", lat: 42.0, lon: 75.0 },
     question: "How does Central Asian lowland desiccation contrast with glacial headwaters?",
   },
   {
@@ -136,6 +136,7 @@ export interface ControlSidebarProps {
   isLoading?: boolean;
   researchQuestion?: string;
   onChangeResearchQuestion?: (question: string) => void;
+  onSelectPreset?: (presetId: string) => void;
 }
 
 export const ControlSidebar: React.FC<ControlSidebarProps> = ({
@@ -154,6 +155,7 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
   isLoading = false,
   researchQuestion = "How do hydrological & temperature trends diverge across regional ecosystems?",
   onChangeResearchQuestion,
+  onSelectPreset,
 }) => {
   // Local string buffers for coordinate inputs so users can type negative numbers (-), decimals (.), and zeros
   // without the input reverting or snapping prematurely.
@@ -173,7 +175,7 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
       setLatBStr(regionB.lat.toString());
       setLonBStr(regionB.lon.toString());
     }
-  }, [regionB?.lat, regionB?.lon]);
+  }, [regionB]);
 
   const currentVarMeta = useMemo(() => {
     return (
@@ -197,7 +199,7 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
             : false)
       )?.id ?? null
     );
-  }, [selectedVariable, regionA.lat, regionA.lon, hasComparison, regionB?.lat, regionB?.lon]);
+  }, [selectedVariable, regionA.lat, regionA.lon, hasComparison, regionB]);
 
   const handleToggleComparison = () => {
     if (hasComparison) {
@@ -218,6 +220,9 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
     onChangeRegionB({ id: "B", ...preset.b });
     if (onChangeResearchQuestion) {
       onChangeResearchQuestion(preset.question);
+    }
+    if (onSelectPreset) {
+      onSelectPreset(preset.id);
     }
   };
 

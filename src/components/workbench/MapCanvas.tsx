@@ -181,6 +181,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
           initialViewState={initialCenter}
           mapStyle="https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json"
           onClick={handleMapClick}
+          onError={(e) => console.warn("MapLibre GL notice:", e.error?.message || e)}
           cursor="crosshair"
           attributionControl={false}
           style={{ width: "100%", height: "100%" }}

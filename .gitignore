@@ -19,6 +19,8 @@ lerna-debug.log*
 out/
 build/
 dist/
+*.tsbuildinfo
+next-env.d.ts
 
 # --- Python & Virtual Environments ---
 __pycache__/

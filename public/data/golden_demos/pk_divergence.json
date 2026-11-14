@@ -1,0 +1,739 @@
+{
+  "investigation_id": "pk-divergence",
+  "variable_id": "GWETROOT",
+  "variable_name": "Root-Zone Soil Moisture Wetness",
+  "units": "fraction (0-1)",
+  "plain_definition": "Fraction of water filling soil pores in the top 100 cm root zone (0 = completely dry soil, 1 = fully saturated soil).",
+  "aggregation_mode": "annual",
+  "start_year": 1981,
+  "end_year": 2025,
+  "provenance": {
+    "source_name": "NASA POWER / MERRA-2",
+    "mission_model": "NASA GLDAS / MERRA-2 Land Surface Model",
+    "api_endpoint": "https://power.larc.nasa.gov/api/temporal/monthly/point",
+    "spatial_resolution": "0.5\u00b0 x 0.625\u00b0 (MERRA-2 Grid)",
+    "missing_months_filtered": 0,
+    "retrieved_at_utc": "2026-11-14T17:09:41.884645+00:00",
+    "verification_links": [
+      {
+        "label": "NASA Giovanni",
+        "url": "https://giovanni.gsfc.nasa.gov/giovanni/"
+      },
+      {
+        "label": "NASA Earthdata",
+        "url": "https://www.earthdata.nasa.gov/data/catalog/ges-disc-gldas-noah10-m-2.1"
+      },
+      {
+        "label": "CUAHSI HydroClient",
+        "url": "https://data.cuahsi.org/"
+      },
+      {
+        "label": "NASA Worldview",
+        "url": "https://worldview.earthdata.nasa.gov/"
+      }
+    ]
+  },
+  "region_a": {
+    "region": {
+      "id": "A",
+      "name": "Upper Indus (Gilgit-Baltistan)",
+      "lat": 35.3,
+      "lon": 75.6
+    },
+    "series": [
+      {
+        "year": 1981,
+        "value": 0.4492,
+        "ols_fitted": 0.3899,
+        "sen_fitted": 0.3874,
+        "anomaly": 0.0304
+      },
+      {
+        "year": 1982,
+        "value": 0.445,
+        "ols_fitted": 0.3912,
+        "sen_fitted": 0.3887,
+        "anomaly": 0.0262
+      },
+      {
+        "year": 1983,
+        "value": 0.4433,
+        "ols_fitted": 0.3925,
+        "sen_fitted": 0.39,
+        "anomaly": 0.0245
+      },
+      {
+        "year": 1984,
+        "value": 0.3908,
+        "ols_fitted": 0.3938,
+        "sen_fitted": 0.3913,
+        "anomaly": -0.028
+      },
+      {
+        "year": 1985,
+        "value": 0.3692,
+        "ols_fitted": 0.3952,
+        "sen_fitted": 0.3926,
+        "anomaly": -0.0496
+      },
+      {
+        "year": 1986,
+        "value": 0.4183,
+        "ols_fitted": 0.3965,
+        "sen_fitted": 0.3939,
+        "anomaly": -0.0005
+      },
+      {
+        "year": 1987,
+        "value": 0.4375,
+        "ols_fitted": 0.3978,
+        "sen_fitted": 0.3952,
+        "anomaly": 0.0187
+      },
+      {
+        "year": 1988,
+        "value": 0.4292,
+        "ols_fitted": 0.3991,
+        "sen_fitted": 0.3965,
+        "anomaly": 0.0104
+      },
+      {
+        "year": 1989,
+        "value": 0.4042,
+        "ols_fitted": 0.4004,
+        "sen_fitted": 0.3977,
+        "anomaly": -0.0146
+      },
+      {
+        "year": 1990,
+        "value": 0.4025,
+        "ols_fitted": 0.4017,
+        "sen_fitted": 0.399,
+        "anomaly": -0.0163
+      },
+      {
+        "year": 1991,
+        "value": 0.3483,
+        "ols_fitted": 0.4031,
+        "sen_fitted": 0.4003,
+        "anomaly": -0.0705
+      },
+      {
+        "year": 1992,
+        "value": 0.4075,
+        "ols_fitted": 0.4044,
+        "sen_fitted": 0.4016,
+        "anomaly": -0.0113
+      },
+      {
+        "year": 1993,
+        "value": 0.3908,
+        "ols_fitted": 0.4057,
+        "sen_fitted": 0.4029,
+        "anomaly": -0.028
+      },
+      {
+        "year": 1994,
+        "value": 0.3883,
+        "ols_fitted": 0.407,
+        "sen_fitted": 0.4042,
+        "anomaly": -0.0305
+      },
+      {
+        "year": 1995,
+        "value": 0.4342,
+        "ols_fitted": 0.4083,
+        "sen_fitted": 0.4055,
+        "anomaly": 0.0154
+      },
+      {
+        "year": 1996,
+        "value": 0.4642,
+        "ols_fitted": 0.4096,
+        "sen_fitted": 0.4068,
+        "anomaly": 0.0454
+      },
+      {
+        "year": 1997,
+        "value": 0.405,
+        "ols_fitted": 0.4109,
+        "sen_fitted": 0.4081,
+        "anomaly": -0.0138
+      },
+      {
+        "year": 1998,
+        "value": 0.3583,
+        "ols_fitted": 0.4123,
+        "sen_fitted": 0.4093,
+        "anomaly": -0.0605
+      },
+      {
+        "year": 1999,
+        "value": 0.3567,
+        "ols_fitted": 0.4136,
+        "sen_fitted": 0.4106,
+        "anomaly": -0.0621
+      },
+      {
+        "year": 2000,
+        "value": 0.3558,
+        "ols_fitted": 0.4149,
+        "sen_fitted": 0.4119,
+        "anomaly": -0.063
+      },
+      {
+        "year": 2001,
+        "value": 0.3633,
+        "ols_fitted": 0.4162,
+        "sen_fitted": 0.4132,
+        "anomaly": -0.0555
+      },
+      {
+        "year": 2002,
+        "value": 0.3733,
+        "ols_fitted": 0.4175,
+        "sen_fitted": 0.4145,
+        "anomaly": -0.0455
+      },
+      {
+        "year": 2003,
+        "value": 0.395,
+        "ols_fitted": 0.4188,
+        "sen_fitted": 0.4158,
+        "anomaly": -0.0238
+      },
+      {
+        "year": 2004,
+        "value": 0.3833,
+        "ols_fitted": 0.4201,
+        "sen_fitted": 0.4171,
+        "anomaly": -0.0355
+      },
+      {
+        "year": 2005,
+        "value": 0.395,
+        "ols_fitted": 0.4215,
+        "sen_fitted": 0.4184,
+        "anomaly": -0.0238
+      },
+      {
+        "year": 2006,
+        "value": 0.4042,
+        "ols_fitted": 0.4228,
+        "sen_fitted": 0.4197,
+        "anomaly": -0.0146
+      },
+      {
+        "year": 2007,
+        "value": 0.4117,
+        "ols_fitted": 0.4241,
+        "sen_fitted": 0.421,
+        "anomaly": -0.0071
+      },
+      {
+        "year": 2008,
+        "value": 0.3942,
+        "ols_fitted": 0.4254,
+        "sen_fitted": 0.4223,
+        "anomaly": -0.0246
+      },
+      {
+        "year": 2009,
+        "value": 0.4192,
+        "ols_fitted": 0.4267,
+        "sen_fitted": 0.4235,
+        "anomaly": 0.0004
+      },
+      {
+        "year": 2010,
+        "value": 0.435,
+        "ols_fitted": 0.428,
+        "sen_fitted": 0.4248,
+        "anomaly": 0.0162
+      },
+      {
+        "year": 2011,
+        "value": 0.4217,
+        "ols_fitted": 0.4294,
+        "sen_fitted": 0.4261,
+        "anomaly": 0.0029
+      },
+      {
+        "year": 2012,
+        "value": 0.4075,
+        "ols_fitted": 0.4307,
+        "sen_fitted": 0.4274,
+        "anomaly": -0.0113
+      },
+      {
+        "year": 2013,
+        "value": 0.4158,
+        "ols_fitted": 0.432,
+        "sen_fitted": 0.4287,
+        "anomaly": -0.003
+      },
+      {
+        "year": 2014,
+        "value": 0.4242,
+        "ols_fitted": 0.4333,
+        "sen_fitted": 0.43,
+        "anomaly": 0.0054
+      },
+      {
+        "year": 2015,
+        "value": 0.49,
+        "ols_fitted": 0.4346,
+        "sen_fitted": 0.4313,
+        "anomaly": 0.0712
+      },
+      {
+        "year": 2016,
+        "value": 0.4625,
+        "ols_fitted": 0.4359,
+        "sen_fitted": 0.4326,
+        "anomaly": 0.0437
+      },
+      {
+        "year": 2017,
+        "value": 0.4258,
+        "ols_fitted": 0.4372,
+        "sen_fitted": 0.4339,
+        "anomaly": 0.007
+      },
+      {
+        "year": 2018,
+        "value": 0.4033,
+        "ols_fitted": 0.4386,
+        "sen_fitted": 0.4352,
+        "anomaly": -0.0155
+      },
+      {
+        "year": 2019,
+        "value": 0.4767,
+        "ols_fitted": 0.4399,
+        "sen_fitted": 0.4364,
+        "anomaly": 0.0579
+      },
+      {
+        "year": 2020,
+        "value": 0.5208,
+        "ols_fitted": 0.4412,
+        "sen_fitted": 0.4377,
+        "anomaly": 0.102
+      },
+      {
+        "year": 2021,
+        "value": 0.4958,
+        "ols_fitted": 0.4425,
+        "sen_fitted": 0.439,
+        "anomaly": 0.077
+      },
+      {
+        "year": 2022,
+        "value": 0.4625,
+        "ols_fitted": 0.4438,
+        "sen_fitted": 0.4403,
+        "anomaly": 0.0437
+      },
+      {
+        "year": 2023,
+        "value": 0.4917,
+        "ols_fitted": 0.4451,
+        "sen_fitted": 0.4416,
+        "anomaly": 0.0729
+      },
+      {
+        "year": 2024,
+        "value": 0.4558,
+        "ols_fitted": 0.4464,
+        "sen_fitted": 0.4429,
+        "anomaly": 0.037
+      },
+      {
+        "year": 2025,
+        "value": 0.4208,
+        "ols_fitted": 0.4478,
+        "sen_fitted": 0.4442,
+        "anomaly": 0.002
+      }
+    ],
+    "stats": {
+      "n_years": 45,
+      "mean_value": 0.4188,
+      "std_dev": 0.0403,
+      "ols_slope_per_year": 0.00131,
+      "ols_slope_per_decade": 0.0131,
+      "ols_r_squared": 0.1833,
+      "ols_p_value": 0.00334,
+      "ols_ci_lower_decade": 0.0046,
+      "ols_ci_upper_decade": 0.0217,
+      "mk_tau": 0.2704,
+      "mk_z_score": 2.602,
+      "mk_p_value": 0.00899,
+      "sen_slope_per_decade": 0.0129,
+      "sen_ci_lower_decade": 0.004,
+      "sen_ci_upper_decade": 0.0242,
+      "lag1_autocorrelation": 0.607,
+      "badge": "INCREASING_SIGNIFICANT",
+      "caveats": [
+        "Moderate lag-1 serial autocorrelation detected (r1 = 0.61); effective degrees of freedom may be lower than sample count."
+      ]
+    }
+  },
+  "region_b": {
+    "region": {
+      "id": "B",
+      "name": "Southwestern Balochistan",
+      "lat": 27.5,
+      "lon": 64.0
+    },
+    "series": [
+      {
+        "year": 1981,
+        "value": 0.4425,
+        "ols_fitted": 0.446,
+        "sen_fitted": 0.444,
+        "anomaly": -0.0058
+      },
+      {
+        "year": 1982,
+        "value": 0.475,
+        "ols_fitted": 0.4461,
+        "sen_fitted": 0.444,
+        "anomaly": 0.0267
+      },
+      {
+        "year": 1983,
+        "value": 0.4492,
+        "ols_fitted": 0.4462,
+        "sen_fitted": 0.4441,
+        "anomaly": 0.0009
+      },
+      {
+        "year": 1984,
+        "value": 0.4575,
+        "ols_fitted": 0.4463,
+        "sen_fitted": 0.4441,
+        "anomaly": 0.0092
+      },
+      {
+        "year": 1985,
+        "value": 0.4425,
+        "ols_fitted": 0.4464,
+        "sen_fitted": 0.4441,
+        "anomaly": -0.0058
+      },
+      {
+        "year": 1986,
+        "value": 0.4442,
+        "ols_fitted": 0.4465,
+        "sen_fitted": 0.4442,
+        "anomaly": -0.0041
+      },
+      {
+        "year": 1987,
+        "value": 0.445,
+        "ols_fitted": 0.4466,
+        "sen_fitted": 0.4442,
+        "anomaly": -0.0033
+      },
+      {
+        "year": 1988,
+        "value": 0.4442,
+        "ols_fitted": 0.4467,
+        "sen_fitted": 0.4443,
+        "anomaly": -0.0041
+      },
+      {
+        "year": 1989,
+        "value": 0.4433,
+        "ols_fitted": 0.4468,
+        "sen_fitted": 0.4443,
+        "anomaly": -0.005
+      },
+      {
+        "year": 1990,
+        "value": 0.445,
+        "ols_fitted": 0.4469,
+        "sen_fitted": 0.4444,
+        "anomaly": -0.0033
+      },
+      {
+        "year": 1991,
+        "value": 0.4433,
+        "ols_fitted": 0.447,
+        "sen_fitted": 0.4444,
+        "anomaly": -0.005
+      },
+      {
+        "year": 1992,
+        "value": 0.4458,
+        "ols_fitted": 0.4472,
+        "sen_fitted": 0.4445,
+        "anomaly": -0.0025
+      },
+      {
+        "year": 1993,
+        "value": 0.4442,
+        "ols_fitted": 0.4473,
+        "sen_fitted": 0.4445,
+        "anomaly": -0.0041
+      },
+      {
+        "year": 1994,
+        "value": 0.445,
+        "ols_fitted": 0.4474,
+        "sen_fitted": 0.4446,
+        "anomaly": -0.0033
+      },
+      {
+        "year": 1995,
+        "value": 0.4458,
+        "ols_fitted": 0.4475,
+        "sen_fitted": 0.4446,
+        "anomaly": -0.0025
+      },
+      {
+        "year": 1996,
+        "value": 0.4517,
+        "ols_fitted": 0.4476,
+        "sen_fitted": 0.4447,
+        "anomaly": 0.0034
+      },
+      {
+        "year": 1997,
+        "value": 0.4475,
+        "ols_fitted": 0.4477,
+        "sen_fitted": 0.4447,
+        "anomaly": -0.0008
+      },
+      {
+        "year": 1998,
+        "value": 0.4442,
+        "ols_fitted": 0.4478,
+        "sen_fitted": 0.4448,
+        "anomaly": -0.0041
+      },
+      {
+        "year": 1999,
+        "value": 0.4425,
+        "ols_fitted": 0.4479,
+        "sen_fitted": 0.4448,
+        "anomaly": -0.0058
+      },
+      {
+        "year": 2000,
+        "value": 0.4425,
+        "ols_fitted": 0.448,
+        "sen_fitted": 0.4449,
+        "anomaly": -0.0058
+      },
+      {
+        "year": 2001,
+        "value": 0.445,
+        "ols_fitted": 0.4481,
+        "sen_fitted": 0.4449,
+        "anomaly": -0.0033
+      },
+      {
+        "year": 2002,
+        "value": 0.4442,
+        "ols_fitted": 0.4482,
+        "sen_fitted": 0.445,
+        "anomaly": -0.0041
+      },
+      {
+        "year": 2003,
+        "value": 0.445,
+        "ols_fitted": 0.4483,
+        "sen_fitted": 0.445,
+        "anomaly": -0.0033
+      },
+      {
+        "year": 2004,
+        "value": 0.4417,
+        "ols_fitted": 0.4484,
+        "sen_fitted": 0.445,
+        "anomaly": -0.0066
+      },
+      {
+        "year": 2005,
+        "value": 0.4583,
+        "ols_fitted": 0.4485,
+        "sen_fitted": 0.4451,
+        "anomaly": 0.01
+      },
+      {
+        "year": 2006,
+        "value": 0.4475,
+        "ols_fitted": 0.4486,
+        "sen_fitted": 0.4451,
+        "anomaly": -0.0008
+      },
+      {
+        "year": 2007,
+        "value": 0.4542,
+        "ols_fitted": 0.4487,
+        "sen_fitted": 0.4452,
+        "anomaly": 0.0059
+      },
+      {
+        "year": 2008,
+        "value": 0.4492,
+        "ols_fitted": 0.4489,
+        "sen_fitted": 0.4452,
+        "anomaly": 0.0009
+      },
+      {
+        "year": 2009,
+        "value": 0.4492,
+        "ols_fitted": 0.449,
+        "sen_fitted": 0.4453,
+        "anomaly": 0.0009
+      },
+      {
+        "year": 2010,
+        "value": 0.445,
+        "ols_fitted": 0.4491,
+        "sen_fitted": 0.4453,
+        "anomaly": -0.0033
+      },
+      {
+        "year": 2011,
+        "value": 0.4475,
+        "ols_fitted": 0.4492,
+        "sen_fitted": 0.4454,
+        "anomaly": -0.0008
+      },
+      {
+        "year": 2012,
+        "value": 0.4442,
+        "ols_fitted": 0.4493,
+        "sen_fitted": 0.4454,
+        "anomaly": -0.0041
+      },
+      {
+        "year": 2013,
+        "value": 0.4475,
+        "ols_fitted": 0.4494,
+        "sen_fitted": 0.4455,
+        "anomaly": -0.0008
+      },
+      {
+        "year": 2014,
+        "value": 0.4433,
+        "ols_fitted": 0.4495,
+        "sen_fitted": 0.4455,
+        "anomaly": -0.005
+      },
+      {
+        "year": 2015,
+        "value": 0.4442,
+        "ols_fitted": 0.4496,
+        "sen_fitted": 0.4456,
+        "anomaly": -0.0041
+      },
+      {
+        "year": 2016,
+        "value": 0.4425,
+        "ols_fitted": 0.4497,
+        "sen_fitted": 0.4456,
+        "anomaly": -0.0058
+      },
+      {
+        "year": 2017,
+        "value": 0.4442,
+        "ols_fitted": 0.4498,
+        "sen_fitted": 0.4457,
+        "anomaly": -0.0041
+      },
+      {
+        "year": 2018,
+        "value": 0.4408,
+        "ols_fitted": 0.4499,
+        "sen_fitted": 0.4457,
+        "anomaly": -0.0075
+      },
+      {
+        "year": 2019,
+        "value": 0.4508,
+        "ols_fitted": 0.45,
+        "sen_fitted": 0.4458,
+        "anomaly": 0.0025
+      },
+      {
+        "year": 2020,
+        "value": 0.4592,
+        "ols_fitted": 0.4501,
+        "sen_fitted": 0.4458,
+        "anomaly": 0.0109
+      },
+      {
+        "year": 2021,
+        "value": 0.4467,
+        "ols_fitted": 0.4502,
+        "sen_fitted": 0.4458,
+        "anomaly": -0.0016
+      },
+      {
+        "year": 2022,
+        "value": 0.4692,
+        "ols_fitted": 0.4503,
+        "sen_fitted": 0.4459,
+        "anomaly": 0.0209
+      },
+      {
+        "year": 2023,
+        "value": 0.4725,
+        "ols_fitted": 0.4504,
+        "sen_fitted": 0.4459,
+        "anomaly": 0.0242
+      },
+      {
+        "year": 2024,
+        "value": 0.4592,
+        "ols_fitted": 0.4506,
+        "sen_fitted": 0.446,
+        "anomaly": 0.0109
+      },
+      {
+        "year": 2025,
+        "value": 0.4425,
+        "ols_fitted": 0.4507,
+        "sen_fitted": 0.446,
+        "anomaly": -0.0058
+      }
+    ],
+    "stats": {
+      "n_years": 45,
+      "mean_value": 0.4483,
+      "std_dev": 0.008,
+      "ols_slope_per_year": 0.00011,
+      "ols_slope_per_decade": 0.0011,
+      "ols_r_squared": 0.0305,
+      "ols_p_value": 0.25131,
+      "ols_ci_lower_decade": -0.0008,
+      "ols_ci_upper_decade": 0.0029,
+      "mk_tau": 0.1154,
+      "mk_z_score": 1.066,
+      "mk_p_value": 0.27866,
+      "sen_slope_per_decade": 0.0005,
+      "sen_ci_lower_decade": -0.0003,
+      "sen_ci_upper_decade": 0.0018,
+      "lag1_autocorrelation": 0.261,
+      "badge": "INCREASING_NOT_SIGNIFICANT",
+      "caveats": [
+        "Observed direction is upward, but p = 0.279 does not cross the \u03b1 = 0.05 significance threshold due to interannual variability."
+      ]
+    }
+  },
+  "divergence_detected": true,
+  "ai_interpretation": {
+    "headline": "Regional Divergence Confirmed: Upper Indus (Gilgit-Baltistan) and Southwestern Balochistan exhibit contrasting Root-Zone Soil Moisture Wetness trajectories (1981\u20132025).",
+    "what_is_changing": "Upper Indus (Gilgit-Baltistan) (35.3\u00b0N, 75.6\u00b0E) shows an increasing linear rate of +0.0131 fraction (0-1)/decade (Sen's robust slope: +0.0129 fraction (0-1)/decade; 95% CI [0.0046, 0.0217]), which is statistically significant (Mann\u2013Kendall p = 0.0090, \u03c4 = 0.27).",
+    "where_it_diverges": "Southwestern Balochistan (27.5\u00b0N, 64.0\u00b0E) shows an increasing linear rate of +0.0011 fraction (0-1)/decade (Sen's robust slope: +0.0005 fraction (0-1)/decade; 95% CI [-0.0008, 0.0029]), which is not statistically significant at \u03b1 = 0.05 (Mann\u2013Kendall p = 0.279, \u03c4 = 0.12). Comparing both regions side by side demonstrates why global or national averages can mask localized environmental shifts.",
+    "statistical_verdict": "Both parametric (Ordinary Least Squares) and non-parametric (Mann\u2013Kendall / Theil\u2013Sen) tests confirm a statistically detectable signal (p < 0.05) over the 45-year NASA record.",
+    "limitations_and_caveats": "Moderate lag-1 serial autocorrelation detected (r1 = 0.61); effective degrees of freedom may be lower than sample count. Observed direction is upward, but p = 0.279 does not cross the \u03b1 = 0.05 significance threshold due to interannual variability.",
+    "generated_by": "deterministic_scientific_engine"
+  }
+}

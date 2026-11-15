@@ -15,9 +15,15 @@ import { InvestigationResponse } from "@/types/investigation";
 
 export interface TrendChartProps {
   data: InvestigationResponse;
+  isOutOfSync?: boolean;
+  onRunInvestigation?: () => void;
 }
 
-export const TrendChart: React.FC<TrendChartProps> = ({ data }) => {
+export const TrendChart: React.FC<TrendChartProps> = ({
+  data,
+  isOutOfSync = false,
+  onRunInvestigation,
+}) => {
   const [fitMode, setFitMode] = useState<"ols" | "sen">("ols");
 
   // Safeguard against missing or malformed data payload
@@ -136,6 +142,22 @@ export const TrendChart: React.FC<TrendChartProps> = ({ data }) => {
           </button>
         </div>
       </div>
+
+      {/* Out-of-sync banner if map pins moved */}
+      {isOutOfSync && (
+        <div className="mb-2 px-3 py-1.5 rounded-lg bg-amber-950/70 border border-amber-500/50 text-[11px] text-amber-200 flex items-center justify-between gap-2 shadow-sm">
+          <span>⚠️ Showing cached investigation for <strong>{data.region_a.region.name}</strong>. Pins were moved on map.</span>
+          {onRunInvestigation && (
+            <button
+              type="button"
+              onClick={onRunInvestigation}
+              className="px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold transition text-[10px] shrink-0"
+            >
+              Analyze New Pins ⚡
+            </button>
+          )}
+        </div>
+      )}
 
       {/* Chart Canvas */}
       <div className="flex-1 w-full min-h-[220px] relative">

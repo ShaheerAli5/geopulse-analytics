@@ -17,6 +17,12 @@ import {
 } from "@/components/detective";
 import { getGoldenCase } from "@/lib/golden_case_data";
 
+function formatCoordLabel(lat: number, lon: number): string {
+  const latDir = lat >= 0 ? "N" : "S";
+  const lonDir = lon >= 0 ? "E" : "W";
+  return `${Math.abs(lat).toFixed(2)}°${latDir}, ${Math.abs(lon).toFixed(2)}°${lonDir}`;
+}
+
 export default function WorkbenchPage() {
   const [activeCaseId, setActiveCaseId] = useState<string | null>("pk_divergence");
   const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false);
@@ -49,6 +55,27 @@ export default function WorkbenchPage() {
   const [data, setData] = useState<InvestigationResponse | null>(() => {
     return (getGoldenCase("pk-divergence") as unknown as InvestigationResponse) || null;
   });
+
+  // Check if current pins / parameters are out of sync with loaded investigation data
+  const isOutOfSync = React.useMemo(() => {
+    if (!data) return false;
+    const tol = 0.05;
+    const aLatDiff = Math.abs(regionA.lat - data.region_a.region.lat) > tol;
+    const aLonDiff = Math.abs(regionA.lon - data.region_a.region.lon) > tol;
+    const varDiff = selectedVariable !== data.variable_id;
+    const aggDiff = aggregationMode !== data.aggregation_mode;
+
+    let bDiff = false;
+    if (Boolean(regionB) !== Boolean(data.region_b)) {
+      bDiff = true;
+    } else if (regionB && data.region_b) {
+      bDiff =
+        Math.abs(regionB.lat - data.region_b.region.lat) > tol ||
+        Math.abs(regionB.lon - data.region_b.region.lon) > tol;
+    }
+
+    return aLatDiff || aLonDiff || varDiff || aggDiff || bDiff;
+  }, [data, regionA, regionB, selectedVariable, aggregationMode]);
 
   // Helper to load a pre-cached golden case file (<50ms for instant judge inspection)
   const loadGoldenDemo = useCallback(async (caseFile: CaseFileOption) => {
@@ -308,8 +335,31 @@ export default function WorkbenchPage() {
         </div>
       )}
 
+      {/* Out of Sync Notice Banner */}
+      {isOutOfSync && (
+        <div className="bg-amber-950/90 border-b border-amber-500/80 px-4 py-2 text-xs text-amber-200 flex flex-wrap items-center justify-between gap-2 shadow-lg z-20 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="text-amber-400 text-base">📍</span>
+            <span>
+              <strong>New pin coordinates selected:</strong> Pin A ({formatCoordLabel(regionA.lat, regionA.lon)})
+              {regionB && ` · Pin B (${formatCoordLabel(regionB.lat, regionB.lon)})`}.
+              Charts & AI report below reflect previous location until refreshed.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleRunInvestigation()}
+            disabled={isLoading}
+            className="px-3 py-1 rounded-lg bg-amber-400 hover:bg-amber-300 text-slate-950 font-bold transition flex items-center gap-1.5 shadow-md text-xs cursor-pointer disabled:opacity-50"
+          >
+            <span>{isLoading ? "Querying NASA..." : "Run Investigation for New Pins"}</span>
+            <span>⚡</span>
+          </button>
+        </div>
+      )}
+
       {/* 2. Main 3-Column Workbench Workspace */}
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-hidden min-h-0">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-3 p-3 overflow-y-auto lg:overflow-hidden min-h-0">
         {/* Left Column (280px-320px equivalent): Investigation Controls */}
         <div className="lg:col-span-3 h-full overflow-hidden flex flex-col min-h-0">
           <ControlSidebar
@@ -342,6 +392,7 @@ export default function WorkbenchPage() {
             }}
             onRunInvestigation={handleRunInvestigation}
             isLoading={isLoading}
+            isOutOfSync={isOutOfSync}
             researchQuestion={researchQuestion}
             onChangeResearchQuestion={setResearchQuestion}
             onSelectPreset={handleSelectPreset}
@@ -356,11 +407,43 @@ export default function WorkbenchPage() {
               regionA={regionA}
               regionB={regionB}
               onSelectRegionA={(coords) => {
-                setRegionA((prev) => ({ ...prev, ...coords }));
+                setRegionA((prev) => {
+                  const isPresetOrGeneric =
+                    prev.name.includes("Upper Indus") ||
+                    prev.name.includes("Jacobabad") ||
+                    prev.name.includes("Aral Sea") ||
+                    prev.name.includes("Mato Grosso") ||
+                    prev.name.startsWith("Location A") ||
+                    prev.name.startsWith("Region A") ||
+                    prev.name.startsWith("Pin A") ||
+                    prev.name.startsWith("Point A");
+                  const newName = isPresetOrGeneric
+                    ? `Location A (${formatCoordLabel(coords.lat, coords.lon)})`
+                    : prev.name;
+                  return { ...prev, ...coords, name: newName };
+                });
                 setActiveCaseId(null);
               }}
               onSelectRegionB={(coords) => {
-                setRegionB((prev) => (prev ? { ...prev, ...coords } : { id: "B", name: "Comparison Region", ...coords }));
+                setRegionB((prev) => {
+                  const isPresetOrGeneric =
+                    !prev ||
+                    prev.name.includes("Balochistan") ||
+                    prev.name.includes("Karachi") ||
+                    prev.name.includes("Tien Shan") ||
+                    prev.name.includes("Central Amazon") ||
+                    prev.name.startsWith("Location B") ||
+                    prev.name.startsWith("Region B") ||
+                    prev.name.startsWith("Pin B") ||
+                    prev.name.startsWith("Point B") ||
+                    prev.name.includes("Comparison Region");
+                  const newName = isPresetOrGeneric
+                    ? `Location B (${formatCoordLabel(coords.lat, coords.lon)})`
+                    : prev.name;
+                  return prev
+                    ? { ...prev, ...coords, name: newName }
+                    : { id: "B", name: newName, ...coords };
+                });
                 setActiveCaseId(null);
               }}
               activeVariableId={selectedVariable}
@@ -370,7 +453,11 @@ export default function WorkbenchPage() {
           {/* Bottom Half: Recharts Dual Time Series + OLS/Sen Slope fit */}
           <div className="flex-[45] min-h-[220px] overflow-hidden">
             {data ? (
-              <TrendChart data={data} />
+              <TrendChart
+                data={data}
+                isOutOfSync={isOutOfSync}
+                onRunInvestigation={() => handleRunInvestigation()}
+              />
             ) : (
               <div className="w-full h-full bg-slate-900/90 border border-slate-800 rounded-xl flex items-center justify-center p-6 text-xs text-slate-400 font-mono">
                 {isLoading ? "Loading NASA satellite observations..." : "No investigation loaded."}

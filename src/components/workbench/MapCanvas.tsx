@@ -80,6 +80,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
 
   const handleMapClick = useCallback(
     (e: { lngLat: { lat: number; lng: number } }) => {
+      if (!e || !e.lngLat) return;
       const coords = normalizeMapCoords(e.lngLat.lat, e.lngLat.lng);
       if (activePinMode === "A") {
         onSelectRegionA(coords);
@@ -214,6 +215,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
             pitchAlignment="map"
             draggable
             onDragEnd={(e: { lngLat: { lat: number; lng: number } }) => {
+              if (!e || !e.lngLat) return;
               const coords = normalizeMapCoords(e.lngLat.lat, e.lngLat.lng);
               onSelectRegionA(coords);
             }}
@@ -222,11 +224,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               className="group relative flex flex-col items-center cursor-grab active:cursor-grabbing"
               title={`Drag Pin A to move (${regionA.lat.toFixed(2)}°, ${regionA.lon.toFixed(2)}°)`}
             >
-              <div className="px-2 py-1 rounded bg-cyan-500 text-slate-950 font-mono text-xs font-bold shadow-lg border border-white whitespace-nowrap transition-transform transform group-hover:scale-105">
+              <div className="px-2 py-1 rounded bg-cyan-500 text-slate-950 font-mono text-xs font-bold shadow-lg border border-white whitespace-nowrap transition-transform transform group-hover:scale-105 pointer-events-none select-none">
                 A: {regionA.name} ({regionA.lat.toFixed(2)}°, {regionA.lon.toFixed(2)}°)
               </div>
-              <div className="w-3 h-3 bg-cyan-500 rotate-45 -mt-1.5 border-r border-b border-white shadow-md" />
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-ping absolute -bottom-1" />
+              <div className="w-3 h-3 bg-cyan-500 rotate-45 -mt-1.5 border-r border-b border-white shadow-md pointer-events-auto" />
+              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-ping absolute -bottom-1 pointer-events-none" />
             </div>
           </Marker>
 
@@ -239,6 +241,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
               pitchAlignment="map"
               draggable
               onDragEnd={(e: { lngLat: { lat: number; lng: number } }) => {
+                if (!e || !e.lngLat) return;
                 const coords = normalizeMapCoords(e.lngLat.lat, e.lngLat.lng);
                 onSelectRegionB(coords);
               }}
@@ -247,11 +250,11 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
                 className="group relative flex flex-col items-center cursor-grab active:cursor-grabbing"
                 title={`Drag Pin B to move (${regionB.lat.toFixed(2)}°, ${regionB.lon.toFixed(2)}°)`}
               >
-                <div className="px-2 py-1 rounded bg-orange-500 text-slate-950 font-mono text-xs font-bold shadow-lg border border-white whitespace-nowrap transition-transform transform group-hover:scale-105">
+                <div className="px-2 py-1 rounded bg-orange-500 text-slate-950 font-mono text-xs font-bold shadow-lg border border-white whitespace-nowrap transition-transform transform group-hover:scale-105 pointer-events-none select-none">
                   B: {regionB.name} ({regionB.lat.toFixed(2)}°, {regionB.lon.toFixed(2)}°)
                 </div>
-                <div className="w-3 h-3 bg-orange-500 rotate-45 -mt-1.5 border-r border-b border-white shadow-md" />
-                <div className="w-2 h-2 rounded-full bg-orange-400 animate-ping absolute -bottom-1" />
+                <div className="w-3 h-3 bg-orange-500 rotate-45 -mt-1.5 border-r border-b border-white shadow-md pointer-events-auto" />
+                <div className="w-2 h-2 rounded-full bg-orange-400 animate-ping absolute -bottom-1 pointer-events-none" />
               </div>
             </Marker>
           )}

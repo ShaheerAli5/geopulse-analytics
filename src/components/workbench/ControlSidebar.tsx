@@ -134,6 +134,7 @@ export interface ControlSidebarProps {
   onChangeTimeRange?: (start: number, end: number) => void;
   onRunInvestigation: () => void;
   isLoading?: boolean;
+  isOutOfSync?: boolean;
   researchQuestion?: string;
   onChangeResearchQuestion?: (question: string) => void;
   onSelectPreset?: (presetId: string) => void;
@@ -153,6 +154,7 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
   onChangeTimeRange,
   onRunInvestigation,
   isLoading = false,
+  isOutOfSync = false,
   researchQuestion = "How do hydrological & temperature trends diverge across regional ecosystems?",
   onChangeResearchQuestion,
   onSelectPreset,
@@ -175,7 +177,7 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
       setLatBStr(regionB.lat.toString());
       setLonBStr(regionB.lon.toString());
     }
-  }, [regionB]);
+  }, [regionB?.lat, regionB?.lon]);
 
   const currentVarMeta = useMemo(() => {
     return (
@@ -706,6 +708,8 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
           className={`w-full py-2.5 px-4 rounded-xl font-mono text-xs font-bold uppercase tracking-wider transition shadow-lg flex items-center justify-center gap-2 ${
             isLoading
               ? "bg-slate-800 text-slate-400 cursor-not-allowed border border-slate-700"
+              : isOutOfSync
+              ? "bg-amber-400 hover:bg-amber-300 text-slate-950 font-extrabold shadow-amber-400/30 ring-2 ring-amber-300 animate-pulse cursor-pointer"
               : "bg-cyan-500 hover:bg-cyan-400 text-slate-950 shadow-cyan-500/25 active:scale-[0.98] cursor-pointer"
           }`}
         >
@@ -728,6 +732,11 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
                 />
               </svg>
               <span>Querying NASA POWER...</span>
+            </>
+          ) : isOutOfSync ? (
+            <>
+              <span>Update Analysis for New Pins</span>
+              <span>⚡</span>
             </>
           ) : (
             <>

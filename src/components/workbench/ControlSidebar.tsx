@@ -234,12 +234,36 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
     }
   };
 
+  const handleLatABlur = () => {
+    let parsed = parseFloat(latAStr);
+    if (isNaN(parsed) || !Number.isFinite(parsed)) {
+      parsed = regionA.lat;
+    } else {
+      parsed = Math.max(-85.05, Math.min(85.05, parsed));
+    }
+    const clean = Number(parsed.toFixed(2));
+    setLatAStr(clean.toString());
+    onChangeRegionA({ ...regionA, lat: clean });
+  };
+
   const handleLonAChange = (valStr: string) => {
     setLonAStr(valStr);
     const parsed = parseFloat(valStr);
     if (!isNaN(parsed) && Number.isFinite(parsed) && parsed >= -180 && parsed <= 180) {
       onChangeRegionA({ ...regionA, lon: parsed });
     }
+  };
+
+  const handleLonABlur = () => {
+    let parsed = parseFloat(lonAStr);
+    if (isNaN(parsed) || !Number.isFinite(parsed)) {
+      parsed = regionA.lon;
+    } else {
+      parsed = ((((parsed + 180) % 360) + 360) % 360) - 180;
+    }
+    const clean = Number(parsed.toFixed(2));
+    setLonAStr(clean.toString());
+    onChangeRegionA({ ...regionA, lon: clean });
   };
 
   const handleLatBChange = (valStr: string) => {
@@ -251,6 +275,19 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
     }
   };
 
+  const handleLatBBlur = () => {
+    if (!regionB) return;
+    let parsed = parseFloat(latBStr);
+    if (isNaN(parsed) || !Number.isFinite(parsed)) {
+      parsed = regionB.lat;
+    } else {
+      parsed = Math.max(-85.05, Math.min(85.05, parsed));
+    }
+    const clean = Number(parsed.toFixed(2));
+    setLatBStr(clean.toString());
+    onChangeRegionB({ ...regionB, lat: clean });
+  };
+
   const handleLonBChange = (valStr: string) => {
     setLonBStr(valStr);
     if (!regionB) return;
@@ -258,6 +295,19 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
     if (!isNaN(parsed) && Number.isFinite(parsed) && parsed >= -180 && parsed <= 180) {
       onChangeRegionB({ ...regionB, lon: parsed });
     }
+  };
+
+  const handleLonBBlur = () => {
+    if (!regionB) return;
+    let parsed = parseFloat(lonBStr);
+    if (isNaN(parsed) || !Number.isFinite(parsed)) {
+      parsed = regionB.lon;
+    } else {
+      parsed = ((((parsed + 180) % 360) + 360) % 360) - 180;
+    }
+    const clean = Number(parsed.toFixed(2));
+    setLonBStr(clean.toString());
+    onChangeRegionB({ ...regionB, lon: clean });
   };
 
   const handleStartYearChange = (newStart: number) => {
@@ -424,13 +474,14 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
           <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
             <div>
               <label htmlFor="regA-lat" className="text-[10px] text-slate-400 block mb-0.5">
-                Lat (°N [-90, 90])
+                Lat (°N [-85.05, 85.05])
               </label>
               <input
                 id="regA-lat"
                 type="text"
                 value={latAStr}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleLatAChange(e.target.value)}
+                onBlur={handleLatABlur}
                 placeholder="35.30"
                 className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
                 style={{ colorScheme: "dark" }}
@@ -445,6 +496,7 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
                 type="text"
                 value={lonAStr}
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleLonAChange(e.target.value)}
+                onBlur={handleLonABlur}
                 placeholder="75.60"
                 className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-slate-200 focus:outline-none focus:border-cyan-500 font-mono"
                 style={{ colorScheme: "dark" }}
@@ -477,13 +529,14 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
             <div className="grid grid-cols-2 gap-2 text-[11px] font-mono">
               <div>
                 <label htmlFor="regB-lat" className="text-[10px] text-slate-400 block mb-0.5">
-                  Lat (°N [-90, 90])
+                  Lat (°N [-85.05, 85.05])
                 </label>
                 <input
                   id="regB-lat"
                   type="text"
                   value={latBStr}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleLatBChange(e.target.value)}
+                  onBlur={handleLatBBlur}
                   placeholder="27.50"
                   className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-slate-200 focus:outline-none focus:border-orange-500 font-mono"
                   style={{ colorScheme: "dark" }}
@@ -498,6 +551,7 @@ export const ControlSidebar: React.FC<ControlSidebarProps> = ({
                   type="text"
                   value={lonBStr}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleLonBChange(e.target.value)}
+                  onBlur={handleLonBBlur}
                   placeholder="64.00"
                   className="w-full bg-slate-900 border border-slate-700 rounded px-1.5 py-0.5 text-slate-200 focus:outline-none focus:border-orange-500 font-mono"
                   style={{ colorScheme: "dark" }}

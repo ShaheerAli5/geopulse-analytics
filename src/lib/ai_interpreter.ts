@@ -1,25 +1,11 @@
 /**
  * GeoPulse Analytics - Evidence-Grounded AI Interpreter
- * Conforms to docs/09 Agent 3 Guided Detective Ai And Demo.md lines 23-83
- * and api/analyze.py lines 30-130.
+ * Conforms to docs/09 Agent 3 Guided Detective Ai And Demo.md
+ * and api/analyze.py.
  *
  * Guarantees zero hallucinated numbers by producing structured narratives
  * derived strictly from verified parametric & non-parametric statistical metrics.
  * 100% deterministic fallback with zero external LLM dependencies.
- */
-
-import type { InvestigationResponse, RegionAnalysis } from "./types";
-
-/**
- * Format a mathematically and grammatically precise scientific verdict sentence
- * for a single region using verified OLS slope, Sen's slope, 95% CI, Mann-Kendall p and tau.
- */
-export function formatRegionVerdict(r: RegionAnalysis, units: string): string {
-  const dir = r.stats.ols_slope_per_decade >= 0 ? "increasing" : "decreasing";
-  const article = dir === "increasing" ? "an" : "a";
- * Evidence-Grounded AI Interpreter & Deterministic Scientific Fallback Engine
- * GeoPulse Analytics - Exclusively Owned by Dev 3
- * Ensures zero hallucinated numbers by strictly synthesizing verified stats.
  */
 
 import { InvestigationResponse, RegionAnalysis } from "@/types/investigation";
@@ -30,24 +16,30 @@ function formatCoordStr(lat: number, lon: number): string {
   return `${Math.abs(lat).toFixed(2)}°${latDir}, ${Math.abs(lon).toFixed(2)}°${lonDir}`;
 }
 
-function formatRegionVerdict(r: RegionAnalysis, units: string): string {
+export function formatRegionVerdict(r: RegionAnalysis, units: string): string {
+  const coordStr = formatCoordStr(r.region.lat, r.region.lon);
+
+  if (r.stats.badge === "INSUFFICIENT_DATA") {
+    const n = r.stats.n_years;
+    return `${r.region.name} (${coordStr}) has insufficient observations (${n} valid year${
+      n === 1 ? "" : "s"
+    }; minimum 10 required) to establish a statistically reliable trend trajectory.`;
+  }
+
   const slope = r.stats.ols_slope_per_decade;
-  const dir = Math.abs(slope) < 1e-6 ? "stable / flat" : slope > 0 ? "increasing" : "decreasing";
+  if (r.stats.badge === "NO_MONOTONIC_TREND" && Math.abs(slope) < 1e-6) {
+    return `${r.region.name} (${coordStr}) shows a stable, flat trajectory with no monotonic trend (OLS slope: 0.0000 ${units}/decade; Sen's robust slope: 0.0000 ${units}/decade; Mann–Kendall p = ${r.stats.mk_p_value.toFixed(
+      3
+    )}, τ = ${r.stats.mk_tau.toFixed(2)}).`;
+  }
+
+  const dir = slope >= 0 ? "increasing" : "decreasing";
   const dirArticle = dir === "increasing" ? "an" : "a";
   const sig =
     r.stats.mk_p_value < 0.05
       ? `statistically significant (Mann–Kendall p = ${r.stats.mk_p_value.toFixed(4)}, τ = ${r.stats.mk_tau.toFixed(2)})`
       : `not statistically significant at α = 0.05 (Mann–Kendall p = ${r.stats.mk_p_value.toFixed(3)}, τ = ${r.stats.mk_tau.toFixed(2)})`;
 
-  const signOls = r.stats.ols_slope_per_decade >= 0 ? "+" : "";
-  const signSen = r.stats.sen_slope_per_decade >= 0 ? "+" : "";
-
-  return `${r.region.name} (${r.region.lat}°N, ${r.region.lon}°E) shows ${article} ${dir} linear rate of ${signOls}${r.stats.ols_slope_per_decade.toFixed(
-    4
-  )} ${units}/decade (Sen's robust slope: ${signSen}${r.stats.sen_slope_per_decade.toFixed(
-    4
-  )} ${units}/decade; 95% CI [${r.stats.ols_ci_lower_decade.toFixed(
-  const coordStr = formatCoordStr(r.region.lat, r.region.lon);
   return `${r.region.name} (${coordStr}) shows ${dirArticle} ${dir} linear rate of ${
     slope >= 0 ? "+" : ""
   }${slope.toFixed(4)} ${units}/decade (Sen's robust slope: ${
@@ -77,8 +69,6 @@ export function buildDeterministicInterpretation(
   const what_is_changing = formatRegionVerdict(a, data.units);
 
   // 3. Where it diverges (Region B comparison or single-region guidance)
-  const what_is_changing = formatRegionVerdict(a, data.units);
-
   const where_it_diverges = b
     ? `${formatRegionVerdict(b, data.units)} Comparing both regions side by side demonstrates why global or national averages can mask localized environmental shifts.`
     : `Single-region analysis selected. Add a Region B pin on the map to test whether a neighboring basin or climatic zone trends in the opposite direction.`;
@@ -103,26 +93,12 @@ export function buildDeterministicInterpretation(
       ? allCaveats.join(" ")
       : `Evaluated across ${a.stats.n_years} years from ${data.provenance.mission_model} (${data.provenance.spatial_resolution}) with ${data.provenance.missing_months_filtered} missing months excluded.`;
 
-  const statistical_verdict =
-    a.stats.mk_p_value < 0.05 || (b && b.stats.mk_p_value < 0.05)
-      ? `Both parametric (Ordinary Least Squares) and non-parametric (Mann–Kendall / Theil–Sen) tests confirm a statistically detectable signal (p < 0.05) over the ${a.stats.n_years}-year NASA record.`
-      : `While the fitted slope shows a directional drift, year-to-year climate variability currently exceeds the long-term signal (p ≥ 0.05). Per NASA Earth science guidelines, a non-significant trend may require seasonal isolation (e.g., Monsoon JJAS) or a longer observation window.`;
-
-  const allCaveats = [
-    ...a.stats.caveats,
-    ...(b ? b.stats.caveats : []),
-  ];
-
   return {
     headline,
     what_is_changing,
     where_it_diverges,
     statistical_verdict,
     limitations_and_caveats,
-    limitations_and_caveats:
-      allCaveats.length > 0
-        ? allCaveats.join(" ")
-        : `Evaluated across ${a.stats.n_years} years from ${data.provenance.mission_model} (${data.provenance.spatial_resolution}) with ${data.provenance.missing_months_filtered} missing months excluded.`,
     generated_by: "deterministic_scientific_engine",
   };
 }

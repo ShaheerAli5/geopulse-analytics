@@ -53,14 +53,14 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
     return GIBS_LAYERS.find((l) => l.id === selectedGibsId) || GIBS_LAYERS[0];
   }, [selectedGibsId]);
 
-  // Center between Region A and Region B if both exist
+  // Center between Region A and Region B if both exist, offset slightly north so northern pins aren't under header
   const initialCenter = useMemo(() => {
     const targetLat = (regionA.lat + (regionB?.lat ?? regionA.lat)) / 2;
     const targetLon = (regionA.lon + (regionB?.lon ?? regionA.lon)) / 2;
     return {
-      latitude: Number.isFinite(targetLat) ? targetLat : 30.0,
+      latitude: Number.isFinite(targetLat) ? targetLat + 1.2 : 30.0,
       longitude: Number.isFinite(targetLon) ? targetLon : 70.0,
-      zoom: 3.8,
+      zoom: 3.2,
     };
   }, [regionA.lat, regionA.lon, regionB?.lat, regionB?.lon]);
 
@@ -71,7 +71,7 @@ export const MapCanvas: React.FC<MapCanvasProps> = ({
       const targetLon = (regionA.lon + (regionB?.lon ?? regionA.lon)) / 2;
       if (Number.isFinite(targetLat) && Number.isFinite(targetLon)) {
         mapRef.current.easeTo({
-          center: [targetLon, targetLat],
+          center: [targetLon, targetLat + 1.2],
           duration: 900,
         });
       }

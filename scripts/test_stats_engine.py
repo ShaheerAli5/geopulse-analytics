@@ -18,7 +18,7 @@ if PROJECT_ROOT not in sys.path:
 
 from api._lib.variable_catalog import VARIABLE_CATALOG
 from api._lib.stats_engine import analyze_time_series
-from api.analyze import execute_investigation
+from api.analyze import execute_investigation, format_region_verdict
 
 
 class TestVariableCatalog(unittest.TestCase):
@@ -279,6 +279,25 @@ class TestAnalyzeEndpoint(unittest.TestCase):
         self.assertGreaterEqual(res["region_a"]["region"]["lat"], -85.05)
         self.assertLessEqual(res["region_a"]["region"]["lon"], 180.0)
         self.assertGreaterEqual(res["region_a"]["region"]["lon"], -180.0)
+
+    def test_insufficient_data_verdict_phrasing(self):
+        mock_region = {
+            "region": {"name": "Test Region", "lat": 30.0, "lon": 70.0},
+            "stats": {"badge": "INSUFFICIENT_DATA", "n_years": 4, "ols_slope_per_decade": 0.0, "sen_slope_per_decade": 0.0, "mk_p_value": 1.0, "mk_tau": 0.0, "ols_ci_lower_decade": 0.0, "ols_ci_upper_decade": 0.0}
+        }
+        verdict = format_region_verdict(mock_region, "mm/day")
+        self.assertIn("insufficient observations", verdict.lower())
+        self.assertNotIn("increasing linear rate", verdict.lower())
+        self.assertNotIn("decreasing linear rate", verdict.lower())
+
+    def test_flat_series_verdict_phrasing(self):
+        mock_region = {
+            "region": {"name": "Flat Region", "lat": 25.0, "lon": 65.0},
+            "stats": {"badge": "NO_MONOTONIC_TREND", "n_years": 30, "ols_slope_per_decade": 0.0, "sen_slope_per_decade": 0.0, "mk_p_value": 1.0, "mk_tau": 0.0, "ols_ci_lower_decade": 0.0, "ols_ci_upper_decade": 0.0}
+        }
+        verdict = format_region_verdict(mock_region, "°C")
+        self.assertIn("stable", verdict.lower())
+        self.assertNotIn("increasing linear rate", verdict.lower())
 
 
 

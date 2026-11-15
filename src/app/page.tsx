@@ -15,10 +15,12 @@ import {
   WizardTheme,
   GOLDEN_CASE_FILES,
 } from "@/components/detective";
+import { getGoldenCase } from "@/lib/golden_case_data";
 
 export default function WorkbenchPage() {
   const [activeCaseId, setActiveCaseId] = useState<string | null>("pk_divergence");
   const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false);
+  const [wizardStep, setWizardStep] = useState<1 | 2>(1);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -43,14 +45,35 @@ export default function WorkbenchPage() {
     "How do hydrological & temperature trends diverge across regional ecosystems?"
   );
 
-  // Loaded investigation data
-  const [data, setData] = useState<InvestigationResponse | null>(null);
+  // Loaded investigation data (preloaded instantly with zero-latency in-memory cache)
+  const [data, setData] = useState<InvestigationResponse | null>(() => {
+    return (getGoldenCase("pk-divergence") as unknown as InvestigationResponse) || null;
+  });
 
   // Helper to load a pre-cached golden case file (<50ms for instant judge inspection)
   const loadGoldenDemo = useCallback(async (caseFile: CaseFileOption) => {
     setIsLoading(true);
     setErrorMessage(null);
     try {
+      // 1. Try instant in-memory cache first (<1ms)
+      const cached =
+        getGoldenCase(caseFile.id) ||
+        getGoldenCase(caseFile.id.replace(/_/g, "-"));
+      if (cached) {
+        const c = cached as unknown as InvestigationResponse;
+        setData(c);
+        setActiveCaseId(caseFile.id);
+        setSelectedVariable(c.variable_id);
+        setRegionA(c.region_a.region);
+        setRegionB(c.region_b ? c.region_b.region : undefined);
+        setAggregationMode(c.aggregation_mode);
+        setStartYear(c.start_year);
+        setEndYear(c.end_year);
+        setIsLoading(false);
+        return;
+      }
+
+      // 2. Fallback to public JSON fetch
       const res = await fetch(`/data/golden_demos/${caseFile.filename}`);
       if (!res.ok) {
         throw new Error(`Failed to load golden demo: ${res.statusText}`);
@@ -76,6 +99,14 @@ export default function WorkbenchPage() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     const urlParams = new URLSearchParams(window.location.search);
+    const wizardParam = urlParams.get("wizard");
+    if (wizardParam === "true" || wizardParam === "open") {
+      setIsWizardOpen(true);
+      if (urlParams.get("step") === "2") {
+        setWizardStep(2);
+      }
+    }
+
     const caseParam = urlParams.get("case");
 
     if (caseParam) {
@@ -154,24 +185,34 @@ export default function WorkbenchPage() {
   }, [activeCaseId, data, selectedVariable, aggregationMode, regionA, regionB, startYear, endYear]);
 
   // Execute live analysis against /api/analyze
-  const handleRunInvestigation = useCallback(async () => {
+  const handleRunInvestigation = useCallback(async (customOverrides?: {
+    variable?: string;
+    regionA?: RegionInput;
+    regionB?: RegionInput;
+    aggregation?: "annual" | "monsoon_jjas" | "winter_djf";
+  }) => {
     setIsLoading(true);
     setErrorMessage(null);
     setActiveCaseId(null);
 
+    const v = customOverrides?.variable || selectedVariable;
+    const rA = customOverrides?.regionA || regionA;
+    const rB = customOverrides?.regionB !== undefined ? customOverrides.regionB : regionB;
+    const agg = customOverrides?.aggregation || aggregationMode;
+
     const payload = {
-      variable_id: selectedVariable,
-      latA: regionA.lat,
-      lonA: regionA.lon,
-      nameA: regionA.name,
-      ...(regionB
+      variable_id: v,
+      latA: rA.lat,
+      lonA: rA.lon,
+      nameA: rA.name,
+      ...(rB
         ? {
-            latB: regionB.lat,
-            lonB: regionB.lon,
-            nameB: regionB.name,
+            latB: rB.lat,
+            lonB: rB.lon,
+            nameB: rB.name,
           }
         : {}),
-      aggregation_mode: aggregationMode,
+      aggregation_mode: agg,
       start_year: startYear,
       end_year: endYear,
     };
@@ -211,12 +252,38 @@ export default function WorkbenchPage() {
   // Apply configuration recommended by Guided Question Wizard
   const handleApplyTheme = useCallback((theme: WizardTheme) => {
     setSelectedVariable(theme.recommendedVariable);
-    setRegionA({ id: "A", ...theme.suggestedA });
-    setRegionB({ id: "B", ...theme.suggestedB });
+    const newRegA: RegionInput = { id: "A", ...theme.suggestedA };
+    const newRegB: RegionInput = { id: "B", ...theme.suggestedB };
+    setRegionA(newRegA);
+    setRegionB(newRegB);
     setAggregationMode(theme.aggregation);
     setResearchQuestion(theme.question);
+
+    // If theme maps to one of the 4 pre-cached golden cases, load it instantly (<1ms)
+    const themeToCaseMap: Record<string, string> = {
+      drought: "pk_divergence",
+      heatwave: "pk_heatwave",
+      rainfall_monsoon: "amazon_drying",
+      lake_desiccation: "aral_sea",
+    };
+    const matchedCaseId = themeToCaseMap[theme.id];
+    if (matchedCaseId) {
+      const matchedCase = GOLDEN_CASE_FILES.find((c) => c.id === matchedCaseId);
+      if (matchedCase) {
+        loadGoldenDemo(matchedCase);
+        return;
+      }
+    }
+
+    // For other themes (e.g. humidity_danger, solar_dimming), trigger live query immediately
     setActiveCaseId(null);
-  }, []);
+    handleRunInvestigation({
+      variable: theme.recommendedVariable,
+      regionA: newRegA,
+      regionB: newRegB,
+      aggregation: theme.aggregation,
+    });
+  }, [loadGoldenDemo, handleRunInvestigation]);
 
   return (
     <div className="flex flex-col h-screen w-screen bg-slate-950 overflow-hidden font-sans">
@@ -329,6 +396,7 @@ export default function WorkbenchPage() {
         isOpen={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
         onApplyTheme={handleApplyTheme}
+        initialStep={wizardStep}
       />
     </div>
   );

@@ -20,11 +20,11 @@ if _CURRENT_DIR not in sys.path:
 
 try:
     from _lib.variable_catalog import VARIABLE_CATALOG
-    from _lib.nasa_power_client import fetch_nasa_power_series
+    from _lib.nasa_power_client import fetch_nasa_power_series, normalize_coords
     from _lib.stats_engine import analyze_time_series
 except ImportError:
     from api._lib.variable_catalog import VARIABLE_CATALOG
-    from api._lib.nasa_power_client import fetch_nasa_power_series
+    from api._lib.nasa_power_client import fetch_nasa_power_series, normalize_coords
     from api._lib.stats_engine import analyze_time_series
 
 
@@ -51,6 +51,16 @@ def safe_float(val: any, default: float) -> float:
 def format_region_verdict(r: dict, units: str) -> str:
     stats = r["stats"]
     reg = r["region"]
+    coord_str = format_coord_str(reg["lat"], reg["lon"])
+
+    if stats.get("badge") == "INSUFFICIENT_DATA":
+        n_obs = stats.get("n_years", 0)
+        return (
+            f"{reg['name']} ({coord_str}) has insufficient observations "
+            f"({n_obs} valid year{'s' if n_obs != 1 else ''}; minimum 10 required) "
+            "to establish a statistically reliable trend trajectory."
+        )
+
     slope_dec = stats["ols_slope_per_decade"]
     sen_dec = stats["sen_slope_per_decade"]
     mk_p = stats["mk_p_value"]
@@ -58,7 +68,13 @@ def format_region_verdict(r: dict, units: str) -> str:
     ci_low = stats["ols_ci_lower_decade"]
     ci_high = stats["ols_ci_upper_decade"]
 
-    coord_str = format_coord_str(reg["lat"], reg["lon"])
+    if stats.get("badge") == "NO_MONOTONIC_TREND" and abs(slope_dec) < 1e-6:
+        return (
+            f"{reg['name']} ({coord_str}) shows a stable, flat trajectory with no monotonic trend "
+            f"(OLS slope: 0.0000 {units}/decade; Sen's robust slope: 0.0000 {units}/decade; "
+            f"Mann–Kendall p = {mk_p:.3f}, τ = {mk_tau:.2f})."
+        )
+
     dir_str = "increasing" if slope_dec >= 0 else "decreasing"
     dir_article = "an" if dir_str == "increasing" else "a"
     if mk_p < 0.05:
@@ -163,7 +179,6 @@ def execute_investigation(params: dict) -> dict:
     lon_a_raw = safe_float(params.get("lonA", params.get("lon_a")), 75.60)
     name_a = str(params.get("nameA", params.get("name_a", "Region A"))).strip() or "Region A"
 
-    from _lib.nasa_power_client import normalize_coords
     lat_a, lon_a = normalize_coords(lat_a_raw, lon_a_raw)
 
     lat_b_raw = params.get("latB", params.get("lat_b"))
@@ -348,6 +363,13 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(payload_bytes)
 
     def do_POST(self):
+        parsed = urllib.parse.urlparse(self.path)
+        if parsed.path in ["/health", "/api/health"]:
+            health_payload = {"status": "ok", "service": "GeoPulse-Analytics-API"}
+            self._set_headers(200)
+            self.wfile.write(json.dumps(health_payload).encode("utf-8"))
+            return
+
         content_length = int(self.headers.get("Content-Length", 0))
         body = self.rfile.read(content_length) if content_length > 0 else b"{}"
 

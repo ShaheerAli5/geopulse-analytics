@@ -1,173 +1,125 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import type { RegionInput } from "../../lib/types";
 
-export interface WizardInvestigationConfig {
-  variable_id: string;
-  variable_name: string;
-  units: string;
-  plain_definition: string;
-  aggregation_mode: "annual" | "monsoon_jjas" | "winter_djf";
-  region_a: RegionInput;
-  region_b?: RegionInput;
-  theme_id: string;
-  sample_question: string;
+export interface WizardTheme {
+  id: string;
+  question: string;
+  description: string;
+  recommendedVariable: string;
+  variableName: string;
+  suggestedA: { name: string; lat: number; lon: number };
+  suggestedB: { name: string; lat: number; lon: number };
+  aggregation: "annual" | "monsoon_jjas" | "winter_djf";
+  category: "Hydrology" | "Temperature" | "Atmosphere" | "Solar Radiation";
+  satelliteMission: string;
 }
+
+export const WIZARD_THEMES: WizardTheme[] = [
+  {
+    id: "drought",
+    question: "Is my region drying up or experiencing chronic root-zone soil moisture decline?",
+    description:
+      "Evaluates multi-decade root-zone soil wetness (GLDAS/MERRA-2) to distinguish temporary meteorological drought from chronic agricultural soil moisture depletion.",
+    recommendedVariable: "GWETROOT",
+    variableName: "Root-Zone Soil Moisture Wetness (0-1 fraction)",
+    suggestedA: { name: "Upper Indus Basin", lat: 35.30, lon: 75.60 },
+    suggestedB: { name: "Southwestern Balochistan", lat: 27.50, lon: 64.00 },
+    aggregation: "annual",
+    category: "Hydrology",
+    satelliteMission: "NASA GLDAS / MERRA-2 Land Surface Model",
+  },
+  {
+    id: "heatwave",
+    question: "Are extreme heatwaves intensifying faster in inland basins than on coastlines?",
+    description:
+      "Measures 2-meter surface air temperature warming trajectories to contrast extreme continental heating bowls against maritime coastal climates.",
+    recommendedVariable: "T2M",
+    variableName: "Surface Air Temperature at 2m (°C)",
+    suggestedA: { name: "Jacobabad Thermal Bowl", lat: 28.28, lon: 68.44 },
+    suggestedB: { name: "Karachi Arabian Coast", lat: 24.86, lon: 67.01 },
+    aggregation: "annual",
+    category: "Temperature",
+    satelliteMission: "NASA Aqua AIRS / MERRA-2 Reanalysis",
+  },
+  {
+    id: "rainfall_monsoon",
+    question: "Is monsoon rainfall shifting or declining along deforestation frontiers?",
+    description:
+      "Analyzes bias-corrected precipitation across the Amazon deforestation arc versus protected core rainforest canopy across 4+ decades.",
+    recommendedVariable: "PRECTOTCORR",
+    variableName: "Bias-Corrected Precipitation Rate (mm/day)",
+    suggestedA: { name: "Mato Grosso Arc of Deforestation", lat: -12.50, lon: -55.50 },
+    suggestedB: { name: "Central Amazon Core Canopy", lat: -3.10, lon: -60.00 },
+    aggregation: "annual",
+    category: "Hydrology",
+    satelliteMission: "NASA GPM IMERG / MERRA-2 Assimilation",
+  },
+  {
+    id: "lake_desiccation",
+    question: "How does terminal inland lake desiccation contrast with alpine glacial headwaters?",
+    description:
+      "Investigates the Aral Sea desiccation basin compared to the Tien Shan alpine glacier feeding zone to uncover upstream vs downstream water divorce.",
+    recommendedVariable: "GWETROOT",
+    variableName: "Root-Zone Soil Wetness (0-1 fraction)",
+    suggestedA: { name: "Aral Sea Basin (Desiccated)", lat: 45.00, lon: 59.50 },
+    suggestedB: { name: "Tien Shan Glacial Range", lat: 42.00, lon: 75.00 },
+    aggregation: "annual",
+    category: "Hydrology",
+    satelliteMission: "NASA GLDAS / MERRA-2 Land Surface Model",
+  },
+  {
+    id: "humidity_danger",
+    question: "Is atmospheric water vapor rising to amplify humid heat stress during Monsoon?",
+    description:
+      "Tracks specific humidity (grams of water vapor per kg air) during peak summer monsoon months (JJAS) to detect dangerous wet-bulb heat environments.",
+    recommendedVariable: "QV2M",
+    variableName: "Specific Humidity at 2m (g/kg)",
+    suggestedA: { name: "Lower Indus Plain (Sindh)", lat: 25.40, lon: 68.36 },
+    suggestedB: { name: "Punjab Agricultural Basin", lat: 31.52, lon: 74.35 },
+    aggregation: "monsoon_jjas",
+    category: "Atmosphere",
+    satelliteMission: "NASA Aqua AIRS / MERRA-2 Meteorology",
+  },
+  {
+    id: "solar_dimming",
+    question: "Are aerosol pollution and smoke dimming incoming surface solar radiation?",
+    description:
+      "Examines All-Sky Surface Shortwave Downward Irradiance to quantify whether high aerosol optical depths have driven regional solar dimming.",
+    recommendedVariable: "ALLSKY_SFC_SW_DWN",
+    variableName: "All-Sky Shortwave Solar Irradiance (kW-hr/m²/day)",
+    suggestedA: { name: "Indo-Gangetic Smog Belt", lat: 28.61, lon: 77.21 },
+    suggestedB: { name: "Himalayan Foothills", lat: 32.22, lon: 76.32 },
+    aggregation: "annual",
+    category: "Solar Radiation",
+    satelliteMission: "NASA CERES / MODIS / Aura OMI Proxy",
+  },
+];
 
 export interface QuestionWizardModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectInvestigation?: (config: WizardInvestigationConfig) => void;
+  onApplyTheme: (theme: WizardTheme) => void;
+  initialStep?: 1 | 2;
 }
-
-interface WizardThemeOption {
-  id: string;
-  title: string;
-  icon: string;
-  shortDesc: string;
-  sampleQuestion: string;
-  variableId: string;
-  variableName: string;
-  units: string;
-  aggregationMode: "annual" | "monsoon_jjas" | "winter_djf";
-  plainDefinition: string;
-  sensorSource: string;
-  regionA: RegionInput;
-  regionB?: RegionInput;
-}
-
-const WIZARD_THEMES: WizardThemeOption[] = [
-  {
-    id: "drought-water",
-    title: "Drought & Root-Zone Water Depletion",
-    icon: "💧",
-    shortDesc:
-      "Investigate multi-decade soil water deficits, groundwater depletion, and agricultural irrigation pressure.",
-    sampleQuestion:
-      "Is root-zone soil moisture drying out across major breadbaskets or arid basins over the last 40+ years?",
-    variableId: "GWETROOT",
-    variableName: "Root-Zone Soil Moisture Wetness",
-    units: "fraction (0-1)",
-    aggregationMode: "annual",
-    plainDefinition:
-      "Fraction of water filling soil pores in the top 100 cm root zone (0 = completely desiccated, 1 = fully saturated soil).",
-    sensorSource: "NASA MERRA-2 Land / Catchment Hydrology Model",
-    regionA: {
-      id: "A",
-      name: "Upper Indus Basin",
-      lat: 35.3,
-      lon: 75.6,
-    },
-    regionB: {
-      id: "B",
-      name: "Southwestern Balochistan",
-      lat: 27.5,
-      lon: 64.0,
-    },
-  },
-  {
-    id: "heatwaves-urban",
-    title: "Extreme Heatwaves & Thermal Exposure",
-    icon: "🔥",
-    shortDesc:
-      "Examine surface air warming rates, urban thermal divergence, and dangerous summer heat stress trends.",
-    sampleQuestion:
-      "Are inland heat poles experiencing faster warming trends than maritime coastal metropolises?",
-    variableId: "T2M",
-    variableName: "Surface Air Temperature (2 Meters)",
-    units: "°C",
-    aggregationMode: "annual",
-    plainDefinition:
-      "Air temperature measured 2 meters above ground—the global meteorological benchmark for human, crop, and ecosystem heat exposure.",
-    sensorSource: "NASA MERRA-2 Atmospheric Reanalysis",
-    regionA: {
-      id: "A",
-      name: "Jacobabad (Inland Thermal Pole)",
-      lat: 28.28,
-      lon: 68.44,
-    },
-    regionB: {
-      id: "B",
-      name: "Karachi (Arabian Sea Coast)",
-      lat: 24.86,
-      lon: 67.01,
-    },
-  },
-  {
-    id: "rainfall-monsoon",
-    title: "Monsoon Shifts & Rainfall Extremes",
-    icon: "🌧️",
-    shortDesc:
-      "Detect shifts in seasonal precipitation intensity, rainforest desiccation, and flooding anomalies.",
-    sampleQuestion:
-      "Are deforestation frontiers experiencing statistically significant precipitation drops compared to intact core rainforest?",
-    variableId: "PRECTOTCORR",
-    variableName: "Bias-Corrected Total Precipitation",
-    units: "mm/day",
-    aggregationMode: "monsoon_jjas",
-    plainDefinition:
-      "Average daily precipitation (rain and melted snow) reaching Earth's surface, bias-corrected using satellite radar and ground gauges.",
-    sensorSource: "NASA POWER Analysis Ready Data / MERRA-2",
-    regionA: {
-      id: "A",
-      name: "Mato Grosso (Arc of Deforestation)",
-      lat: -12.5,
-      lon: -55.5,
-    },
-    regionB: {
-      id: "B",
-      name: "Central Amazon Rainforest (Core)",
-      lat: -3.1,
-      lon: -60.0,
-    },
-  },
-  {
-    id: "solar-humidity",
-    title: "Solar Irradiance & Atmospheric Moisture",
-    icon: "☀️",
-    shortDesc:
-      "Analyze atmospheric moisture holding capacity alongside all-sky solar radiation reaching the surface.",
-    sampleQuestion:
-      "How is surface solar radiation trending alongside specific humidity in high-latitude or mountain regions?",
-    variableId: "ALLSKY_SFC_SW_DWN",
-    variableName: "All Sky Surface Downward Solar Irradiance",
-    units: "kW-hr/m²/day",
-    aggregationMode: "annual",
-    plainDefinition:
-      "Total solar energy incident per square meter per day across all sky conditions, driving evaporation and renewable potential.",
-    sensorSource: "NASA CERES / GEWEX Surface Radiation Budget",
-    regionA: {
-      id: "A",
-      name: "Aral Sea Basin",
-      lat: 45.0,
-      lon: 59.5,
-    },
-    regionB: {
-      id: "B",
-      name: "Tien Shan Mountains",
-      lat: 42.0,
-      lon: 75.0,
-    },
-  },
-];
 
 export const QuestionWizardModal: React.FC<QuestionWizardModalProps> = ({
   isOpen,
   onClose,
-  onSelectInvestigation,
+  onApplyTheme,
+  initialStep = 1,
 }) => {
-  const [step, setStep] = useState<1 | 2>(1);
-  const [selectedThemeId, setSelectedThemeId] = useState<string>(
-    WIZARD_THEMES[0].id
-  );
+  const [selectedThemeId, setSelectedThemeId] = useState<string>(WIZARD_THEMES[0].id);
+  const [step, setStep] = useState<1 | 2>(initialStep);
 
+  // Reset modal state on open
   useEffect(() => {
-    if (!isOpen) {
-      setStep(1);
+    if (isOpen) {
+      setStep(initialStep);
     }
-  }, [isOpen]);
+  }, [isOpen, initialStep]);
 
+  // Handle escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
@@ -180,302 +132,173 @@ export const QuestionWizardModal: React.FC<QuestionWizardModalProps> = ({
 
   if (!isOpen) return null;
 
-  const currentTheme =
+  const activeTheme =
     WIZARD_THEMES.find((t) => t.id === selectedThemeId) || WIZARD_THEMES[0];
 
   const handleApply = () => {
-    if (onSelectInvestigation) {
-      onSelectInvestigation({
-        variable_id: currentTheme.variableId,
-        variable_name: currentTheme.variableName,
-        units: currentTheme.units,
-        plain_definition: currentTheme.plainDefinition,
-        aggregation_mode: currentTheme.aggregationMode,
-        region_a: currentTheme.regionA,
-        region_b: currentTheme.regionB,
-        theme_id: currentTheme.id,
-        sample_question: currentTheme.sampleQuestion,
-      });
-    }
+    onApplyTheme(activeTheme);
     onClose();
   };
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn"
       data-testid="question-wizard-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="wizard-modal-title"
     >
-      <div className="w-full max-w-2xl bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-2xl bg-slate-900 border border-slate-700/80 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Modal Header */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-800 bg-slate-900/90">
-          <div className="flex items-center gap-2.5">
-            <span className="p-2 rounded-xl bg-cyan-950/80 border border-cyan-500/40 text-cyan-400 text-lg">
+        <div className="flex items-center justify-between p-4 sm:p-5 border-b border-slate-800 bg-slate-900/95">
+          <div className="flex items-center gap-3">
+            <span className="w-9 h-9 rounded-xl bg-cyan-500/20 border border-cyan-500/40 text-cyan-400 flex items-center justify-center text-lg font-mono">
               🔍
             </span>
             <div>
-              <div className="font-mono text-[11px] uppercase tracking-wider text-cyan-400 font-semibold">
+              <div className="font-mono text-[10px] uppercase tracking-wider text-cyan-400 font-semibold">
                 NASA Challenge Guided Workflow
               </div>
-              <h2 className="text-base font-bold text-slate-100">
-                Ask the Trend Detective
-              </h2>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition cursor-pointer"
-            aria-label="Close wizard"
-import React, { useState } from "react";
-
-export interface WizardTheme {
-  id: string;
-  question: string;
-  description: string;
-  recommendedVariable: string;
-  variableName: string;
-  suggestedA: { name: string; lat: number; lon: number };
-  suggestedB: { name: string; lat: number; lon: number };
-  aggregation: "annual" | "monsoon_jjas" | "winter_djf";
-}
-
-export const WIZARD_THEMES: WizardTheme[] = [
-  {
-    id: "drought",
-    question: "Is my region drying up or experiencing chronic soil moisture decline?",
-    description: "Evaluates multi-decade root-zone soil wetness (GLDAS/MERRA-2) to distinguish meteorological drought from agricultural soil depletion.",
-    recommendedVariable: "GWETROOT",
-    variableName: "Root-Zone Soil Moisture Wetness (0-1)",
-    suggestedA: { name: "Upper Indus", lat: 35.30, lon: 75.60 },
-    suggestedB: { name: "Southwestern Balochistan", lat: 27.50, lon: 64.00 },
-    aggregation: "annual",
-  },
-  {
-    id: "heatwave",
-    question: "Where is extreme atmospheric heat accelerating faster: inland or coastal?",
-    description: "Analyzes 2-meter air temperature (MERRA-2/Aqua AIRS) across continental interiors versus maritime coasts.",
-    recommendedVariable: "T2M",
-    variableName: "Surface Air Temperature (2 Meters, °C)",
-    suggestedA: { name: "Jacobabad (Inland Thermal Pole)", lat: 28.28, lon: 68.44 },
-    suggestedB: { name: "Karachi (Arabian Sea Coast)", lat: 24.86, lon: 67.01 },
-    aggregation: "annual",
-  },
-  {
-    id: "monsoon",
-    question: "Are monsoon rain patterns shifting or becoming more erratic?",
-    description: "Isolates June-September summer precipitation (MERRA-2/GPM IMERG) to test if seasonal monsoon delivery has statistically changed.",
-    recommendedVariable: "PRECTOTCORR",
-    variableName: "Bias-Corrected Total Precipitation (mm/day)",
-    suggestedA: { name: "Upper Indus Basin", lat: 35.30, lon: 75.60 },
-    suggestedB: { name: "Lower Sindh Plains", lat: 25.40, lon: 68.35 },
-    aggregation: "monsoon_jjas",
-  },
-  {
-    id: "aerosols",
-    question: "Are atmospheric aerosols, smoke, or dust dimming solar radiation reaching the surface?",
-    description: "Measures all-sky downward solar shortwave radiation (CERES/MODIS/OMI) to investigate solar dimming or brightening.",
-    recommendedVariable: "ALLSKY_SFC_SW_DWN",
-    variableName: "All-Sky Surface Downward Solar Irradiance (kW-hr/m²/day)",
-    suggestedA: { name: "Indo-Gangetic Smog Basin", lat: 31.52, lon: 74.35 },
-    suggestedB: { name: "Himalayan Foothills", lat: 34.08, lon: 74.79 },
-    aggregation: "winter_djf",
-  },
-];
-
-export interface QuestionWizardModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onApplyTheme: (theme: WizardTheme) => void;
-}
-
-export const QuestionWizardModal: React.FC<QuestionWizardModalProps> = ({
-  isOpen,
-  onClose,
-  onApplyTheme,
-}) => {
-  const [selectedThemeId, setSelectedThemeId] = useState<string>(WIZARD_THEMES[0].id);
-
-  if (!isOpen) return null;
-
-  const activeTheme = WIZARD_THEMES.find((t) => t.id === selectedThemeId) || WIZARD_THEMES[0];
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm animate-fadeIn">
-      <div className="bg-slate-900 border border-slate-700/80 rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-        {/* Modal Header */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 font-mono font-bold text-sm">
-              ?
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-white tracking-tight">
+              <h2 id="wizard-modal-title" className="text-base font-bold text-slate-100">
                 Ask the Earth System Trend Detective
               </h2>
-              <p className="text-xs text-slate-400">
-                Pick your environmental research question to configure the right NASA parameters.
-              </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center font-bold text-sm transition"
+            className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition cursor-pointer text-sm"
+            aria-label="Close modal"
           >
             ✕
           </button>
         </div>
 
-        {/* Wizard Steps Navigation */}
-        <div className="flex border-b border-slate-800 bg-slate-950/50 px-6 py-2.5 text-xs font-mono">
-          <div
-            className={`flex items-center gap-2 cursor-pointer transition ${
-              step === 1 ? "text-cyan-400 font-bold" : "text-slate-400"
-            }`}
+        {/* Wizard Steps Progress Header */}
+        <div className="flex items-center border-b border-slate-800 bg-slate-950/60 px-5 py-2.5 text-xs font-mono">
+          <button
+            type="button"
             onClick={() => setStep(1)}
+            className={`flex items-center gap-1.5 transition ${
+              step === 1 ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-slate-200"
+            }`}
           >
-            <span
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                step === 1 ? "bg-cyan-500 text-slate-950 font-bold" : "bg-slate-800 text-slate-400"
-              }`}
-            >
+            <span className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px]">
               1
             </span>
-            <span>Choose Research Question</span>
-          </div>
-          <span className="mx-3 text-slate-600">→</span>
-          <div
-            className={`flex items-center gap-2 cursor-pointer transition ${
-              step === 2 ? "text-cyan-400 font-bold" : "text-slate-400"
-            }`}
+            <span>Choose Question</span>
+          </button>
+
+          <span className="text-slate-600 mx-3">→</span>
+
+          <button
+            type="button"
             onClick={() => setStep(2)}
+            className={`flex items-center gap-1.5 transition ${
+              step === 2 ? "text-cyan-400 font-bold" : "text-slate-400 hover:text-slate-200"
+            }`}
           >
-            <span
-              className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] ${
-                step === 2 ? "bg-cyan-500 text-slate-950 font-bold" : "bg-slate-800 text-slate-400"
-              }`}
-            >
+            <span className="w-5 h-5 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-[10px]">
               2
             </span>
-            <span>Recommended NASA Variable & Regions</span>
-          </div>
+            <span>NASA Variable & Target Basins</span>
+          </button>
         </div>
 
-        {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-4">
+        {/* Modal Content */}
+        <div className="p-5 overflow-y-auto space-y-4 flex-1">
           {step === 1 ? (
             <div className="space-y-3">
               <p className="text-xs text-slate-300">
-                Select an environmental research theme. The Trend Detective will automatically map
-                your question to the authoritative NASA Earth science variable and pre-configure
-                optimal coordinates:
+                Select an environmental question to investigate across multi-decade NASA Earth observation records:
               </p>
 
               <div className="grid grid-cols-1 gap-2.5">
                 {WIZARD_THEMES.map((theme) => {
                   const isSelected = selectedThemeId === theme.id;
                   return (
-                    <div
+                    <button
                       key={theme.id}
+                      type="button"
                       onClick={() => setSelectedThemeId(theme.id)}
-                      className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-start gap-3.5 ${
+                      className={`w-full text-left p-3.5 rounded-xl border transition-all cursor-pointer flex flex-col gap-1 ${
                         isSelected
-                          ? "bg-cyan-950/40 border-cyan-500/80 shadow-md ring-1 ring-cyan-500/50"
-                          : "bg-slate-800/40 border-slate-700/60 hover:bg-slate-800/70 hover:border-slate-600"
+                          ? "bg-cyan-950/40 border-cyan-500 shadow-md shadow-cyan-500/10 ring-1 ring-cyan-500/50"
+                          : "bg-slate-800/40 border-slate-700/70 hover:bg-slate-800 hover:border-slate-600 text-slate-300"
                       }`}
                     >
-                      <span className="text-2xl shrink-0 p-1 bg-slate-900/80 rounded-lg border border-slate-700">
-                        {theme.icon}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2">
-                          <h3 className="font-semibold text-slate-100 text-xs">
-                            {theme.title}
-                          </h3>
-                          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700 shrink-0">
-                            {theme.variableId}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-slate-400 mt-1 leading-snug">
-                          {theme.shortDesc}
-                        </p>
-                        <div className="text-[11px] text-cyan-400/90 italic mt-1.5 flex items-start gap-1">
-                          <span className="shrink-0 font-bold">Q:</span>
-                          <span>&ldquo;{theme.sampleQuestion}&rdquo;</span>
-                        </div>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="font-semibold text-xs text-slate-100 flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isSelected ? "bg-cyan-400" : "bg-slate-500"
+                            }`}
+                          />
+                          {theme.question}
+                        </span>
+                        <span className="text-[10px] font-mono uppercase bg-slate-800 border border-slate-700 px-2 py-0.5 rounded text-cyan-300 shrink-0">
+                          {theme.category}
+                        </span>
                       </div>
-                    </div>
+                      <p className="text-[11px] text-slate-400 pl-4 leading-relaxed">
+                        {theme.description}
+                      </p>
+                    </button>
                   );
                 })}
               </div>
             </div>
           ) : (
+            /* Step 2: Confirmation & Target Coordinate Details */
             <div className="space-y-4">
-              <div className="p-4 rounded-xl bg-slate-800/50 border border-slate-700 space-y-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <span className="font-mono text-[10px] uppercase tracking-wider text-cyan-400 font-semibold block">
-                      Recommended NASA Observation Target
-                    </span>
-                    <h3 className="text-sm font-bold text-slate-100 mt-0.5">
-                      {currentTheme.variableName} ({currentTheme.variableId})
-                    </h3>
-                  </div>
-                  <span className="font-mono text-xs px-2.5 py-1 rounded-md bg-cyan-950 border border-cyan-500/60 text-cyan-300 font-semibold shrink-0">
-                    {currentTheme.units}
+              <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/80 space-y-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-cyan-400 font-mono text-sm">📡</span>
+                  <span className="text-xs font-bold text-slate-100 uppercase tracking-wide">
+                    Detective Configuration Breakdown
                   </span>
                 </div>
 
-                <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800 text-xs text-slate-300 space-y-1">
-                  <div className="font-semibold text-slate-200">
-                    Plain-English Scientific Definition:
+                <div className="text-xs text-slate-300 space-y-2">
+                  <div>
+                    <span className="text-slate-400 font-mono text-[11px]">Primary Question:</span>
+                    <p className="font-semibold text-white mt-0.5">{activeTheme.question}</p>
                   </div>
-                  <p className="leading-relaxed">{currentTheme.plainDefinition}</p>
-                </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                  <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] uppercase font-mono text-slate-500 block">
-                      Satellite / Model Source
-                    </span>
-                    <span className="text-slate-200 font-medium">
-                      {currentTheme.sensorSource}
-                    </span>
-                  </div>
-                  <div className="p-2.5 rounded-lg bg-slate-900/60 border border-slate-800">
-                    <span className="text-[10px] uppercase font-mono text-slate-500 block">
-                      Recommended Aggregation
-                    </span>
-                    <span className="text-cyan-300 font-mono font-medium">
-                      {currentTheme.aggregationMode === "annual"
-                        ? "Annual Calendar Average (Jan–Dec)"
-                        : currentTheme.aggregationMode === "monsoon_jjas"
-                        ? "Monsoon Season Only (Jun–Sep JJAS)"
-                        : "Winter Season (Dec–Feb DJF)"}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-3 rounded-lg bg-slate-950/70 border border-slate-800 space-y-1.5 text-xs">
-                  <div className="font-mono text-[10px] uppercase text-slate-400 font-semibold">
-                    Configured Investigation Coordinates
-                  </div>
-                  <div className="flex flex-wrap gap-4 text-[11px] font-mono">
-                    <div className="flex items-center gap-1.5 text-cyan-400">
-                      <span className="w-2 h-2 rounded-full bg-cyan-400" />
-                      <span>
-                        Region A: {currentTheme.regionA.name} ({currentTheme.regionA.lat}°N,{" "}
-                        {currentTheme.regionA.lon}°E)
-                      </span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-700/60 font-mono text-[11px]">
+                    <div>
+                      <span className="text-slate-400">NASA Variable:</span>
+                      <p className="text-cyan-300 font-semibold">{activeTheme.variableName}</p>
+                      <p className="text-slate-500 text-[10px]">Code: {activeTheme.recommendedVariable}</p>
                     </div>
-                    {currentTheme.regionB && (
-                      <div className="flex items-center gap-1.5 text-orange-400">
-                        <span className="w-2 h-2 rounded-full bg-orange-400" />
-                        <span>
-                          Region B: {currentTheme.regionB.name} ({currentTheme.regionB.lat}°N,{" "}
-                          {currentTheme.regionB.lon}°E)
-                        </span>
-                      </div>
-                    )}
+                    <div>
+                      <span className="text-slate-400">Mission / Model:</span>
+                      <p className="text-slate-200">{activeTheme.satelliteMission}</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-700/60 font-mono text-[11px]">
+                    <div className="p-2 rounded bg-slate-900 border border-cyan-500/30">
+                      <span className="text-cyan-400 font-bold">Pin A (Baseline Region):</span>
+                      <p className="text-white mt-0.5 font-semibold">{activeTheme.suggestedA.name}</p>
+                      <p className="text-slate-400 text-[10px]">
+                        {activeTheme.suggestedA.lat}°N, {activeTheme.suggestedA.lon}°E
+                      </p>
+                    </div>
+                    <div className="p-2 rounded bg-slate-900 border border-orange-500/30">
+                      <span className="text-orange-400 font-bold">Pin B (Comparison Region):</span>
+                      <p className="text-white mt-0.5 font-semibold">{activeTheme.suggestedB.name}</p>
+                      <p className="text-slate-400 text-[10px]">
+                        {activeTheme.suggestedB.lat}°N, {activeTheme.suggestedB.lon}°E
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-slate-700/60 font-mono text-[11px] text-slate-400 flex items-center justify-between">
+                    <span>Aggregation Mode:</span>
+                    <span className="text-slate-200 uppercase bg-slate-900 px-2 py-0.5 rounded border border-slate-700">
+                      {activeTheme.aggregation}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -483,138 +306,44 @@ export const QuestionWizardModal: React.FC<QuestionWizardModalProps> = ({
           )}
         </div>
 
-        {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-800 bg-slate-900/90 flex items-center justify-between">
+        {/* Modal Footer Controls */}
+        <div className="flex items-center justify-between p-4 border-t border-slate-800 bg-slate-900/90 text-xs">
           {step === 1 ? (
             <>
               <button
+                type="button"
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={() => setStep(2)}
-                className="px-4 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs transition shadow flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold font-mono transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-500/20"
               >
-                <span>Review Recommended Variable</span>
+                <span>Review Configuration</span>
                 <span>→</span>
               </button>
             </>
           ) : (
             <>
               <button
+                type="button"
                 onClick={() => setStep(1)}
-                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition cursor-pointer"
+                className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition cursor-pointer"
               >
-                ← Back to Themes
+                ← Back to Questions
               </button>
               <button
+                type="button"
                 onClick={handleApply}
-                className="px-5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer"
+                className="px-5 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-bold font-mono transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-500/20"
               >
-                <span>Launch Trend Investigation</span>
-                <span>🚀</span>
+                <span>⚡ Apply to Workbench & Investigate</span>
               </button>
             </>
           )}
-        {/* Modal Body */}
-        <div className="p-4 sm:p-5 space-y-4 overflow-y-auto text-xs">
-          <div>
-            <label className="text-[11px] font-mono uppercase tracking-wider text-slate-400 font-semibold block mb-2">
-              Step 1: What ecological or climate phenomenon do you want to test?
-            </label>
-            <div className="grid grid-cols-1 gap-2.5">
-              {WIZARD_THEMES.map((theme) => {
-                const isSelected = theme.id === selectedThemeId;
-                return (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    onClick={() => setSelectedThemeId(theme.id)}
-                    className={`p-3 rounded-xl border text-left transition flex flex-col gap-1 cursor-pointer ${
-                      isSelected
-                        ? "bg-cyan-950/60 border-cyan-500 text-white shadow-md shadow-cyan-500/10"
-                        : "bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-850"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-slate-100">
-                        {theme.question}
-                      </span>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-cyan-400 shrink-0 ml-2">
-                        {theme.recommendedVariable}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 leading-relaxed">
-                      {theme.description}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Recommended Parameters Preview */}
-          <div className="bg-slate-950 p-3.5 rounded-xl border border-slate-800 space-y-2">
-            <span className="text-[10px] font-mono uppercase tracking-wider text-cyan-400 font-semibold block">
-              Step 2: Recommended NASA Investigation Configuration
-            </span>
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-mono">
-                  Recommended Variable:
-                </span>
-                <span className="text-slate-200 font-medium">{activeTheme.variableName}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-mono">
-                  Temporal Aggregation:
-                </span>
-                <span className="text-slate-200 font-medium uppercase font-mono">
-                  {activeTheme.aggregation.replace("_", " ")}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-mono">
-                  Pin A (Primary):
-                </span>
-                <span className="text-cyan-400 font-medium">
-                  {activeTheme.suggestedA.name} ({activeTheme.suggestedA.lat}°, {activeTheme.suggestedA.lon}°)
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500 block text-[10px] uppercase font-mono">
-                  Pin B (Comparison):
-                </span>
-                <span className="text-orange-400 font-medium">
-                  {activeTheme.suggestedB.name} ({activeTheme.suggestedB.lat}°, {activeTheme.suggestedB.lon}°)
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Modal Footer */}
-        <div className="p-4 border-t border-slate-800 flex items-center justify-end gap-3 bg-slate-950/60">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition cursor-pointer"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              onApplyTheme(activeTheme);
-              onClose();
-            }}
-            className="px-5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition flex items-center gap-2 cursor-pointer shadow-lg shadow-cyan-500/25"
-          >
-            <span>Load Investigation</span>
-            <span>⚡</span>
-          </button>
         </div>
       </div>
     </div>
